@@ -240,6 +240,18 @@ input[type='radio'] { width: 18px; min-height: 18px; accent-color: var(--red); m
 .token { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .token code { flex: 1 1 160px; background: var(--navy); border-radius: 8px; padding: 10px 12px; font-size: 14px; overflow-wrap: anywhere; }
 
+/* Frotas e equipe */
+.grupo { display: grid; gap: 14px; }
+.grupo-topo { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+.frota { background: var(--deep); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: grid; gap: 16px; }
+.frota-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: clamp(20px, 3vw, 40px); }
+.frota-cols > div { display: grid; gap: 10px; align-content: start; }
+.rotulo { font-size: 13px; font-weight: 700; color: var(--red); margin-top: 6px; }
+.pessoas { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.pessoas li { display: grid; border-left: 3px solid var(--steel); padding-left: 10px; }
+.pessoas small { color: var(--muted); font-size: 13px; }
+@media (max-width: 700px) { .frota-cols { grid-template-columns: minmax(0, 1fr); } }
+
 /* Rodapé */
 .rodape { background: var(--deep); border-top: 1px solid var(--line); }
 .rodape-in { display: grid; grid-template-columns: minmax(0, 1.4fr) repeat(2, minmax(0, 1fr)); gap: 32px; }

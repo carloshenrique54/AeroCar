@@ -1,8 +1,17 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
+const PAPEIS = {
+  pessoal: 'Conta pessoal',
+  titular: 'Plano Executivo',
+  gerente: 'Gerente',
+  piloto: 'Piloto',
+}
+
 export default function PainelLayout() {
-  const { perfil } = useAuth()
+  const { perfil, conta, papel } = useAuth()
+  const membro = papel === 'gerente' || papel === 'piloto'
+  const detalhe = [PAPEIS[papel], membro ? conta?.frota_nome : null, conta?.empresa].filter(Boolean).join(' · ')
 
   return (
     <div className="painel band">
@@ -10,11 +19,12 @@ export default function PainelLayout() {
         <aside className="painel-menu" aria-label="Painel">
           <p className="painel-ola">
             Olá, {perfil?.nome?.split(' ')[0] || 'piloto'}
-            <small>{perfil?.tipo === 'executivo' ? 'Plano Executivo' : 'Conta pessoal'}</small>
+            <small>{detalhe}</small>
           </p>
-          <NavLink end to="/painel">Meus veículos</NavLink>
+          <NavLink end to="/painel">{papel === 'pessoal' ? 'Meu AeroCar' : 'Veículos'}</NavLink>
           <NavLink to="/painel/voos/novo">Novo plano de voo</NavLink>
           <NavLink to="/painel/historico">Histórico de voos</NavLink>
+          {papel !== 'pessoal' && <NavLink to="/painel/equipe">{papel === 'piloto' ? 'Minha frota' : 'Frotas e equipe'}</NavLink>}
           <NavLink to="/painel/conta">Conta</NavLink>
         </aside>
         <section className="painel-conteudo">

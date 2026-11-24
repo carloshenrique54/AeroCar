@@ -13,6 +13,7 @@ import NovoVoo from './pages/painel/NovoVoo'
 import Voo from './pages/painel/Voo'
 import Historico from './pages/painel/Historico'
 import Conta from './pages/painel/Conta'
+import Equipe from './pages/painel/Equipe'
 
 function RolarParaTopo() {
   const { pathname, hash } = useLocation()
@@ -42,6 +43,7 @@ export default function App() {
             <Route path="voos/novo" element={<NovoVoo />} />
             <Route path="voos/:id" element={<Voo />} />
             <Route path="historico" element={<Historico />} />
+            <Route path="equipe" element={<Equipe />} />
             <Route path="conta" element={<Conta />} />
           </Route>
           <Route path="*" element={<NaoEncontrado />} />

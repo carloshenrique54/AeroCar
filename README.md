@@ -31,6 +31,18 @@ React (Vite) + Supabase (Auth, Postgres, Realtime).
    *Registrar pouso* encerra o voo; se houve bateria crítica, fica marcado como emergência.
 7. **Histórico** e **Conta**.
 
+## Contas e papéis
+
+| Papel    | Quem é                                | O que vê e faz                                              |
+|----------|---------------------------------------|-------------------------------------------------------------|
+| Pessoal  | dono de um AeroCar                    | o próprio veículo e os próprios voos                        |
+| Titular  | dono da conta no plano Executivo      | todas as frotas, veículos, voos e a equipe                  |
+| Gerente  | membro da conta Executiva             | veículos e todos os voos da sua frota; registra pousos      |
+| Piloto   | membro da conta Executiva             | veículos da sua frota; planeja e faz os próprios voos       |
+
+As regras ficam no banco (RLS + funções `pode_ver_veiculo`, `pode_gerir_veiculo`,
+`pode_ver_voo`), e `minha_conta()` diz ao site qual é o papel de quem entrou.
+
 ## Veículos de fábrica
 
 | Matrícula | Código de ativação | Observação                |
@@ -51,7 +63,7 @@ src/
   context/      AuthContext (sessão e perfil)
   lib/          supabase.js, format.js, sinal.js
   pages/        Home, Entrar, Cadastro
-  pages/painel/ Visao, NovoVoo, Voo, Historico, Conta
+  pages/painel/ Visao, NovoVoo, Voo, Historico, Equipe, Conta
 wokwi/
   sketch.ino, libraries.txt
 ```

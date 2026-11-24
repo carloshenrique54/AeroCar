@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../context/AuthContext'
 import { dataHora, duracao, erroAmigavel, numero, STATUS_VOO } from '../../lib/format'
 
 export default function Historico() {
+  const { papel } = useAuth()
+  const comPiloto = papel === 'titular' || papel === 'gerente'
   const [voos, setVoos] = useState([])
   const [filtro, setFiltro] = useState('todos')
   const [busca, setBusca] = useState('')
@@ -31,7 +34,7 @@ export default function Historico() {
   const lista = voos.filter((v) => {
     if (filtro !== 'todos' && v.veiculo_id !== filtro) return false
     const q = busca.trim().toLowerCase()
-    return !q || `${v.origem} ${v.destino}`.toLowerCase().includes(q)
+    return !q || `${v.origem} ${v.destino} ${v.piloto ?? ''}`.toLowerCase().includes(q)
   })
 
   const concluidos = voos.filter((v) => v.status === 'concluido')
@@ -57,7 +60,7 @@ export default function Historico() {
       </div>
 
       <div className="filtros">
-        <label htmlFor="busca">Buscar trecho<input id="busca" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Origem ou destino" /></label>
+        <label htmlFor="busca">Buscar trecho<input id="busca" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder={comPiloto ? 'Origem, destino ou piloto' : 'Origem ou destino'} /></label>
         {veiculos.length > 1 && (
           <label htmlFor="filtro">Veículo
             <select id="filtro" value={filtro} onChange={(e) => setFiltro(e.target.value)}>
@@ -75,6 +78,7 @@ export default function Historico() {
               <tr>
                 <th>Trecho</th>
                 <th>Veículo</th>
+                {comPiloto && <th>Piloto</th>}
                 <th>Data</th>
                 <th>Duração</th>
                 <th className="num">Alt. máx.</th>
@@ -87,6 +91,7 @@ export default function Historico() {
                 <tr key={v.id}>
                   <td><Link to={`/painel/voos/${v.id}`}>{v.origem} a {v.destino}</Link></td>
                   <td>{v.apelido || v.matricula}</td>
+                  {comPiloto && <td>{v.piloto || '—'}</td>}
                   <td className="nowrap">{dataHora(v.inicio || v.criado_em)}</td>
                   <td className="nowrap">{v.status === 'concluido' ? duracao(v.inicio, v.fim) : '—'}</td>
                   <td className="num">{v.altitude_pico != null ? `${numero(v.altitude_pico)} m` : '—'}</td>

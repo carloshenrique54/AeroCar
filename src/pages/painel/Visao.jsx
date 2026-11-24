@@ -7,10 +7,12 @@ import { comSinal, useAgora } from '../../lib/sinal'
 import VincularVeiculo from '../../components/VincularVeiculo'
 
 export default function Visao() {
-  const { user, perfil } = useAuth()
-  const executivo = perfil?.tipo === 'executivo'
+  const { user, papel, conta } = useAuth()
+  const titular = papel === 'titular'
+  const pessoal = papel === 'pessoal'
   const agora = useAgora()
   const [veiculos, setVeiculos] = useState([])
+  const [frotas, setFrotas] = useState([])
   const [voos, setVoos] = useState([])
   const [alertas, setAlertas] = useState([])
   const [carregando, setCarregando] = useState(true)
@@ -28,9 +30,13 @@ export default function Visao() {
   }, [])
 
   const carregar = useCallback(async () => {
-    const { data, error } = await supabase.from('veiculos').select('*').order('matricula')
+    const [{ data, error }, fr] = await Promise.all([
+      supabase.from('veiculos').select('*').order('matricula'),
+      supabase.from('frotas').select('*').order('nome'),
+    ])
     if (error) setErro(erroAmigavel(error))
     setVeiculos(data ?? [])
+    setFrotas(fr.data ?? [])
     await carregarVoos()
     setCarregando(false)
   }, [carregarVoos])
@@ -39,12 +45,13 @@ export default function Visao() {
     carregar()
     const canal = supabase
       .channel(`painel-${user.id}`)
-      // O veículo atualiza bateria e sinal a cada segundo: só troca aquele cartão
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'veiculos', filter: `user_id=eq.${user.id}` }, (p) =>
+      // O veículo atualiza bateria e sinal a cada segundo: só troca aquele cartão.
+      // Sem filtro: as regras de acesso do banco já entregam só o que cada papel pode ver.
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'veiculos' }, (p) =>
         setVeiculos((lista) => (lista.some((v) => v.id === p.new.id) ? lista.map((v) => (v.id === p.new.id ? { ...v, ...p.new } : v)) : lista)),
       )
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'voos', filter: `user_id=eq.${user.id}` }, carregarVoos)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'alertas', filter: `user_id=eq.${user.id}` }, carregarVoos)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'voos' }, carregarVoos)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'alertas' }, carregarVoos)
       .subscribe()
     return () => {
       supabase.removeChannel(canal)
@@ -64,6 +71,15 @@ export default function Visao() {
 
   if (carregando) return <p className="carregando">Carregando…</p>
 
+  if (!veiculos.length && !titular && !pessoal) {
+    return (
+      <div className="vazio">
+        <h1 className="titulo-pag">Nenhum veículo na sua frota</h1>
+        <p className="muted">Quando o titular da conta colocar veículos na sua frota, eles aparecem aqui.</p>
+      </div>
+    )
+  }
+
   if (!veiculos.length) {
     return (
       <div className="vazio largo">
@@ -75,14 +91,25 @@ export default function Visao() {
   }
 
   const online = veiculos.filter((v) => comSinal(v.ultimo_sinal, agora)).length
+  const titulo = pessoal
+    ? veiculos.length > 1 ? 'Meus veículos' : 'Meu AeroCar'
+    : papel === 'titular' ? conta?.empresa || 'Frotas' : conta?.frota_nome || 'Veículos da frota'
+
+  // Agrupa por frota (contas executivas); veículos sem frota ficam num grupo próprio
+  const grupos = pessoal || !frotas.length
+    ? [{ id: 'todos', nome: null, veiculos }]
+    : [
+        ...frotas.map((f) => ({ ...f, veiculos: veiculos.filter((v) => v.frota_id === f.id) })),
+        { id: 'sem-frota', nome: 'Sem frota', veiculos: veiculos.filter((v) => !v.frota_id) },
+      ].filter((g) => g.veiculos.length)
   const emVoo = veiculos.filter((v) => v.status === 'em_voo').length
 
   return (
     <>
       <div className="cab-pag">
-        <h1 className="titulo-pag">{veiculos.length > 1 ? 'Meus veículos' : 'Meu AeroCar'}</h1>
+        <h1 className="titulo-pag">{titulo}</h1>
         <div className="cabine-acoes">
-          {executivo && (
+          {titular && (
             <button className="btn ghost" type="button" onClick={() => setVinculando((v) => !v)}>Vincular outro veículo</button>
           )}
           <Link className="btn red" to="/painel/voos/novo">Novo plano de voo</Link>
@@ -99,7 +126,7 @@ export default function Visao() {
         />
       )}
 
-      {!executivo && (
+      {pessoal && (
         <p className="muted">Tem mais de um AeroCar? Com o <Link to="/painel/conta">plano Executivo</Link> você acompanha todos no mesmo painel.</p>
       )}
 
@@ -138,7 +165,7 @@ export default function Visao() {
               <li key={v.id}>
                 <div>
                   <b>{v.origem} a {v.destino}</b>
-                  <small>{v.apelido || v.matricula} · até {v.altitude_max} m</small>
+                  <small>{v.apelido || v.matricula}{!pessoal && v.piloto ? ` · ${v.piloto}` : ''} · até {v.altitude_max} m</small>
                 </div>
                 <span className={`selo ${v.status}`}>{STATUS_VOO[v.status]}</span>
                 <Link className="btn ghost peq" to={`/painel/voos/${v.id}`}>{v.status === 'em_voo' ? 'Acompanhar' : 'Ir para a cabine'}</Link>
@@ -148,22 +175,33 @@ export default function Visao() {
         </div>
       )}
 
-      <div className="veiculos">
-        {veiculos.map((v) => (
-          <CartaoVeiculo
-            key={v.id}
-            v={v}
-            online={comSinal(v.ultimo_sinal, agora)}
-            onRenomear={renomear}
-            voo={voos.find((x) => x.veiculo_id === v.id && x.status === 'em_voo')}
-          />
-        ))}
-      </div>
+      {grupos.map((g) => (
+        <section key={g.id} className="grupo">
+          {g.nome && (
+            <div className="grupo-topo">
+              <h2 className="h-bloco">{g.nome}</h2>
+              {g.base && <span className="muted">Base: {g.base}</span>}
+            </div>
+          )}
+          <div className="veiculos">
+            {g.veiculos.map((v) => (
+              <CartaoVeiculo
+                key={v.id}
+                v={v}
+                online={comSinal(v.ultimo_sinal, agora)}
+                podeRenomear={titular || pessoal}
+                onRenomear={renomear}
+                voo={voos.find((x) => x.veiculo_id === v.id && x.status === 'em_voo')}
+              />
+            ))}
+          </div>
+        </section>
+      ))}
     </>
   )
 }
 
-function CartaoVeiculo({ v, voo, online, onRenomear }) {
+function CartaoVeiculo({ v, voo, online, podeRenomear, onRenomear }) {
   const [editando, setEditando] = useState(false)
   const [nome, setNome] = useState(v.apelido ?? '')
   const [copiado, setCopiado] = useState(false)
@@ -198,7 +236,10 @@ function CartaoVeiculo({ v, voo, online, onRenomear }) {
         ) : (
           <div>
             <h3>{v.apelido || 'AeroCar'}</h3>
-            <small className="muted">Matrícula {v.matricula} · <button type="button" className="link-btn" onClick={() => setEditando(true)}>renomear</button></small>
+            <small className="muted">
+              Matrícula {v.matricula}
+              {podeRenomear && <> · <button type="button" className="link-btn" onClick={() => setEditando(true)}>renomear</button></>}
+            </small>
           </div>
         )}
         <span className={`selo ${v.status}`}>{STATUS_VEICULO[v.status]}</span>
@@ -218,6 +259,8 @@ function CartaoVeiculo({ v, voo, online, onRenomear }) {
       <div className="veiculo-acoes">
         {voo ? (
           <Link className="btn red peq" to={`/painel/voos/${voo.id}`}>Acompanhar voo</Link>
+        ) : v.status === 'manutencao' ? (
+          <span className="muted">Indisponível para voos durante a manutenção.</span>
         ) : (
           <Link className="btn red peq" to={`/painel/voos/novo?veiculo=${v.id}`}>Planejar voo</Link>
         )}

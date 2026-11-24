@@ -6,15 +6,21 @@ const AuthContext = createContext(null)
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null)
   const [perfil, setPerfil] = useState(null)
+  const [conta, setConta] = useState(null)
   const [carregando, setCarregando] = useState(true)
 
   const carregarPerfil = useCallback(async (userId) => {
     if (!userId) {
       setPerfil(null)
+      setConta(null)
       return
     }
-    const { data } = await supabase.from('perfis').select('*').eq('id', userId).maybeSingle()
+    const [{ data }, { data: c }] = await Promise.all([
+      supabase.from('perfis').select('*').eq('id', userId).maybeSingle(),
+      supabase.rpc('minha_conta'),
+    ])
     setPerfil(data)
+    setConta(c)
   }, [])
 
   useEffect(() => {
@@ -50,6 +56,9 @@ export function AuthProvider({ children }) {
     session,
     user: session?.user ?? null,
     perfil,
+    // papel: pessoal | titular | gerente | piloto
+    conta,
+    papel: conta?.papel ?? (perfil?.tipo === 'executivo' ? 'titular' : 'pessoal'),
     carregando,
     entrar,
     cadastrar,

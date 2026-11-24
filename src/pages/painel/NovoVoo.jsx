@@ -24,7 +24,7 @@ export default function NovoVoo() {
         setVeiculos(lista)
         setF((atual) => ({
           ...atual,
-          veiculo_id: atual.veiculo_id || lista.find((v) => v.status === 'em_solo')?.id || lista[0]?.id || '',
+          veiculo_id: atual.veiculo_id || lista.find((v) => v.status === 'em_solo' && Number(v.bateria) >= 30)?.id || lista.find((v) => v.status === 'em_solo')?.id || lista[0]?.id || '',
         }))
         setCarregando(false)
       })
@@ -73,7 +73,7 @@ export default function NovoVoo() {
         <select id="veiculo_id" name="veiculo_id" value={f.veiculo_id} onChange={mudar}>
           {veiculos.map((v) => (
             <option key={v.id} value={v.id}>
-              {(v.apelido || 'AeroCar') + ' · ' + v.matricula + ' · ' + numero(v.bateria) + '%'}
+              {(v.apelido || 'AeroCar') + ' · ' + v.matricula + ' · ' + (v.status === 'manutencao' ? 'em manutenção' : numero(v.bateria) + '%')}
             </option>
           ))}
         </select>

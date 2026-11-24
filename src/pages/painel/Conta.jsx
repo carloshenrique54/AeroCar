@@ -5,7 +5,8 @@ import { erroAmigavel } from '../../lib/format'
 import { telefone, telefoneValido } from '../../lib/mascaras'
 
 export default function Conta() {
-  const { user, perfil, recarregarPerfil } = useAuth()
+  const { user, perfil, conta, papel, recarregarPerfil } = useAuth()
+  const membro = papel === 'gerente' || papel === 'piloto'
   const [f, setF] = useState({ nome: '', telefone: '' })
   const [msg, setMsg] = useState({ tipo: '', txt: '' })
   const [senha, setSenha] = useState('')
@@ -58,6 +59,17 @@ export default function Conta() {
   return (
     <>
       <h1 className="titulo-pag">Conta</h1>
+      {membro ? (
+        <div className="plano">
+          <b>{papel === 'gerente' ? 'Gerente' : 'Piloto'}{conta?.frota_nome ? ` da ${conta.frota_nome}` : ''}</b>
+          <span>
+            Você faz parte da conta Executiva {conta?.empresa ? `da ${conta.empresa}` : ''}{conta?.titular ? `, cujo titular é ${conta.titular}` : ''}.
+            {papel === 'gerente'
+              ? ' Você acompanha os veículos e todos os voos da sua frota.'
+              : ' Você planeja e faz voos com os veículos da sua frota.'}
+          </span>
+        </div>
+      ) : (
       <div className="plano">
         <b>{executivo ? 'Plano Executivo' : 'Conta pessoal'}</b>
         <span>
@@ -72,6 +84,7 @@ export default function Conta() {
         </div>
         {msgPlano.txt && <p className={`aviso ${msgPlano.tipo}`} role="status">{msgPlano.txt}</p>}
       </div>
+      )}
       <div className="conta">
         <form className="compra-form" onSubmit={salvar} noValidate>
           <h2 className="h-bloco">Seus dados</h2>

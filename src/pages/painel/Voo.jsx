@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../context/AuthContext'
 import Medidores from '../../components/Medidores'
 import LineChart from '../../components/LineChart'
 import { dataHora, duracao, erroAmigavel, numero, STATUS_VOO } from '../../lib/format'
@@ -8,6 +9,8 @@ import { comSinal, useAgora } from '../../lib/sinal'
 
 export default function Voo() {
   const { id } = useParams()
+  const { user, papel } = useAuth()
+  const [piloto, setPiloto] = useState('')
   const navigate = useNavigate()
   const agora = useAgora(1000)
   const [voo, setVoo] = useState(null)
@@ -37,9 +40,10 @@ export default function Voo() {
         setCarregando(false)
         return
       }
-      const [t, a] = await Promise.all([
+      const [t, a, p] = await Promise.all([
         supabase.from('telemetria').select('*').eq('voo_id', id).order('registrado_em'),
         supabase.from('alertas').select('*').eq('voo_id', id).order('criado_em', { ascending: false }),
+        supabase.from('perfis').select('nome').eq('id', v.user_id).maybeSingle(),
       ])
       if (!ativo) return
       const { veiculos, ...resto } = v
@@ -47,6 +51,7 @@ export default function Voo() {
       setVeiculo(veiculos)
       setLeituras(t.data ?? [])
       setAlertas(a.data ?? [])
+      setPiloto(p.data?.nome ?? '')
       setCarregando(false)
     })()
     return () => {
@@ -98,6 +103,8 @@ export default function Voo() {
   if (!voo) return <div className="vazio"><p className="aviso erro">{erro}</p><Link to="/painel">Voltar ao painel</Link></div>
 
   const ultima = leituras[leituras.length - 1]
+  const meuVoo = voo.user_id === user.id
+  const gestor = papel === 'titular' || papel === 'gerente'
   const online = comSinal(veiculo?.ultimo_sinal, agora)
   const emVoo = voo.status === 'em_voo'
   const bateriaAtual = emVoo && ultima ? Number(ultima.bateria) : Number(veiculo?.bateria ?? 0)
@@ -115,7 +122,7 @@ export default function Voo() {
         <div>
           <h1 className="titulo-pag">{voo.origem} a {voo.destino}</h1>
           <p className="muted">
-            {veiculo?.apelido || 'AeroCar'} · {veiculo?.matricula} · altitude máxima {voo.altitude_max} m
+            {veiculo?.apelido || 'AeroCar'} · {veiculo?.matricula}{!meuVoo && piloto ? ` · piloto ${piloto}` : ''} · altitude máxima {voo.altitude_max} m
           </p>
         </div>
         <div className={`ao-vivo ${online && voo.status !== 'concluido' && voo.status !== 'cancelado' ? 'on' : ''}`}>
@@ -156,7 +163,10 @@ export default function Voo() {
         />
 
         <div className="cabine-acoes">
-          {voo.status === 'planejado' && (
+          {voo.status === 'planejado' && !meuVoo && (
+            <span className="muted">Aguardando a decolagem{piloto ? ` de ${piloto}` : ''}.</span>
+          )}
+          {voo.status === 'planejado' && meuVoo && (
             <>
               <button className="btn red" type="button" onClick={decolar} disabled={enviando || !online}>Decolar</button>
               <button className="btn ghost" type="button" onClick={cancelar}>Cancelar plano</button>
@@ -167,7 +177,9 @@ export default function Voo() {
           )}
           {emVoo && (
             <>
-              <button className="btn ghost" type="button" onClick={registrarPouso} disabled={enviando}>Registrar pouso</button>
+              {(meuVoo || gestor) && (
+                <button className="btn ghost" type="button" onClick={registrarPouso} disabled={enviando}>Registrar pouso</button>
+              )}
               <span className="muted">Tempo de voo: {duracao(voo.inicio)}</span>
             </>
           )}
