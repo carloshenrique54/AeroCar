@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import carro from '../assets/aerocar.webp'
 
 function gerarCidade() {
   let s = 7
@@ -35,14 +36,6 @@ export default function CityScene() {
             <stop offset="0" stopColor="#222F4B" />
             <stop offset="1" stopColor="#303C56" />
           </linearGradient>
-          <linearGradient id="carroceria" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#3a4766" />
-            <stop offset="1" stopColor="#151b28" />
-          </linearGradient>
-          <linearGradient id="vidro" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#8fa3c9" />
-            <stop offset="1" stopColor="#2a3550" />
-          </linearGradient>
           <radialGradient id="brilho">
             <stop offset="0" stopColor="#DB0B15" stopOpacity=".55" />
             <stop offset="1" stopColor="#DB0B15" stopOpacity="0" />
@@ -62,22 +55,8 @@ export default function CityScene() {
           ))}
         </g>
         <g className="aerocar">
-          <ellipse cx="760" cy="250" rx="230" ry="40" fill="url(#brilho)" />
-          <path d="M560 205 Q600 160 700 150 L800 148 Q880 150 935 180 L980 200 Q990 214 975 222 L580 226 Q555 222 560 205Z" fill="url(#carroceria)" />
-          <path d="M660 160 Q700 120 770 118 Q830 120 868 152 L800 150 L700 152Z" fill="url(#vidro)" />
-          <path d="M600 190 L940 186" stroke="#DB0B15" strokeWidth="3" />
-          <path d="M575 214 L965 212" stroke="#EFE4DC" strokeOpacity=".25" strokeWidth="1.5" />
-          <g fill="#151b28">
-            <ellipse cx="620" cy="232" rx="62" ry="13" />
-            <ellipse cx="910" cy="232" rx="62" ry="13" />
-          </g>
-          <g fill="none" stroke="#DB0B15" strokeWidth="2.5">
-            <ellipse cx="620" cy="232" rx="62" ry="13" />
-            <ellipse cx="910" cy="232" rx="62" ry="13" />
-          </g>
-          <rect x="420" y="178" width="110" height="5" fill="#EFE4DC" opacity=".9" />
-          <rect x="450" y="192" width="90" height="5" fill="#DB0B15" />
-          <rect x="478" y="206" width="66" height="4" fill="#DB0B15" />
+          <ellipse cx="720" cy="312" rx="300" ry="34" fill="url(#brilho)" />
+          <image href={carro} x="380" y="118" width="680" height="196" preserveAspectRatio="xMidYMid meet" />
         </g>
       </svg>
     </div>
