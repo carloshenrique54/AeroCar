@@ -178,18 +178,31 @@ export default function Voo() {
         )}
 
         <LineChart
-          series={[{ nome: 'Altitude (m)', cor: '#EFE4DC', valores: leituras.map((l) => Number(l.altitude)) }]}
+          titulo="Altitude"
+          series={[{ nome: 'Altitude do veículo', cor: '#EFE4DC', valores: leituras.map((l) => Number(l.altitude)) }]}
           max={alturaTopo}
-          limite={{ valor: voo.altitude_max, rotulo: 'limite do plano' }}
+          unidade="m"
+          limite={{ valor: voo.altitude_max, rotulo: `Altitude máxima do plano (${voo.altitude_max} m)` }}
+          tempos={leituras.map((l) => l.registrado_em)}
           altura={180}
-          rotulo="Altitude ao longo do voo"
         />
         <LineChart
-          series={[{ nome: 'Bateria (%)', cor: '#DB0B15', valores: leituras.map((l) => Number(l.bateria)) }]}
+          titulo="Inclinação"
+          series={[{ nome: 'Inclinação do veículo', cor: '#8fa3c9', valores: leituras.map((l) => Math.abs(Number(l.inclinacao))) }]}
+          max={Math.max(40, ...leituras.map((l) => Math.abs(Number(l.inclinacao)) * 1.1))}
+          unidade="°"
+          limite={{ valor: 30, rotulo: 'Limite seguro (30°)' }}
+          tempos={leituras.map((l) => l.registrado_em)}
+          altura={130}
+        />
+        <LineChart
+          titulo="Bateria"
+          series={[{ nome: 'Carga da bateria', cor: '#DB0B15', valores: leituras.map((l) => Number(l.bateria)) }]}
           max={100}
-          limite={{ valor: 20, rotulo: 'nível crítico' }}
-          altura={120}
-          rotulo="Bateria ao longo do voo"
+          unidade="%"
+          limite={{ valor: 20, rotulo: 'Nível crítico (20%)' }}
+          tempos={leituras.map((l) => l.registrado_em)}
+          altura={130}
         />
 
         <div className="cabine-acoes">

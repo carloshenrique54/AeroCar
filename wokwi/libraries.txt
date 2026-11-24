@@ -1,4 +1,0 @@
-# Bibliotecas do projeto no Wokwi
-# (WiFi, WiFiClientSecure e HTTPClient já vêm com o ESP32)
-Adafruit MPU6050
-ESP32Servo

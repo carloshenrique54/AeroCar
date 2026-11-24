@@ -86,11 +86,12 @@ export default function Home() {
             </div>
             <Medidores leitura={{ altitude: 144, inclinacao: 1.8, bateria: 71 }} altitudeMax={150} />
             <LineChart
-              series={[{ nome: 'Altitude', cor: '#EFE4DC', valores: VOO_EXEMPLO }]}
+              titulo="Altitude"
+              series={[{ nome: 'Altitude do veículo', cor: '#EFE4DC', valores: VOO_EXEMPLO }]}
               max={170}
-              limite={{ valor: 150, rotulo: 'limite do plano' }}
+              unidade="m"
+              limite={{ valor: 150, rotulo: 'Altitude máxima do plano' }}
               altura={130}
-              rotulo="Altitude ao longo do voo"
             />
           </div>
         </div>
