@@ -117,20 +117,20 @@ export default function Home() {
       <section className="band" id="proprietario">
         <div className="wrap buy">
           <div>
-            <p className="label">Plano Executivo</p>
-            <h2 className="h2-sec">Já tem um AeroCar? Ative a sua conta.</h2>
-            <p className="lede">O plano Executivo vem incluso com o veículo, sem mensalidade. Crie a conta e vincule o seu AeroCar com a matrícula e o código de ativação entregues junto com ele.</p>
+            <p className="label">Área do proprietário</p>
+            <h2 className="h2-sec">Já tem um AeroCar? Crie a sua conta.</h2>
+            <p className="lede">Vincule o veículo com a matrícula e o código de ativação entregues junto com ele e acompanhe cada voo pela plataforma.</p>
             <ul className="inclui">
-              <li><span>Telemetria em tempo real</span><span>Incluso</span></li>
-              <li><span>Alertas de bateria, altitude e inclinação</span><span>Incluso</span></li>
-              <li><span>Histórico de cada voo</span><span>Incluso</span></li>
-              <li><span>Vários veículos na mesma conta</span><span>Incluso</span></li>
+              <li><span>Telemetria em tempo real</span><span>Todas as contas</span></li>
+              <li><span>Alertas de bateria, altitude e inclinação</span><span>Todas as contas</span></li>
+              <li><span>Histórico de cada voo</span><span>Todas as contas</span></li>
+              <li><span>Vários veículos no mesmo painel</span><span>Plano Executivo</span></li>
             </ul>
             <div className="ctas">
               <Link className="btn red" to={user ? '/painel' : '/cadastro'}>{user ? 'Ir para o meu painel' : 'Criar minha conta'}</Link>
               {!user && <Link className="btn ghost" to="/entrar">Já tenho conta</Link>}
             </div>
-            <p className="src">AeroCar a partir de {dinheiro(PRECO_UNITARIO)}, com o plano Executivo incluso.</p>
+            <p className="src">AeroCar a partir de {dinheiro(PRECO_UNITARIO)}, com a plataforma inclusa.</p>
           </div>
           <FormDemonstracao />
         </div>

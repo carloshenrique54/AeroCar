@@ -10,7 +10,7 @@ export default function PainelLayout() {
         <aside className="painel-menu" aria-label="Painel">
           <p className="painel-ola">
             Olá, {perfil?.nome?.split(' ')[0] || 'piloto'}
-            <small>Plano Executivo</small>
+            <small>{perfil?.tipo === 'executivo' ? 'Plano Executivo' : 'Conta pessoal'}</small>
           </p>
           <NavLink end to="/painel">Meus veículos</NavLink>
           <NavLink to="/painel/voos/novo">Novo plano de voo</NavLink>

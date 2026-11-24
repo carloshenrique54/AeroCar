@@ -9,6 +9,19 @@ export default function Conta() {
   const [msg, setMsg] = useState({ tipo: '', txt: '' })
   const [senha, setSenha] = useState('')
   const [msgSenha, setMsgSenha] = useState({ tipo: '', txt: '' })
+  const [msgPlano, setMsgPlano] = useState({ tipo: '', txt: '' })
+  const [trocando, setTrocando] = useState(false)
+  const executivo = perfil?.tipo === 'executivo'
+
+  const trocarPlano = async () => {
+    setMsgPlano({ tipo: '', txt: '' })
+    setTrocando(true)
+    const { error } = await supabase.rpc('alterar_tipo_conta', { p_tipo: executivo ? 'pessoal' : 'executivo' })
+    setTrocando(false)
+    if (error) return setMsgPlano({ tipo: 'erro', txt: erroAmigavel(error) })
+    await recarregarPerfil()
+    setMsgPlano({ tipo: 'ok', txt: executivo ? 'Sua conta voltou a ser pessoal.' : 'Plano Executivo ativado. Agora você pode vincular vários veículos.' })
+  }
 
   useEffect(() => {
     if (perfil) setF({ nome: perfil.nome ?? '', telefone: perfil.telefone ?? '' })
@@ -41,8 +54,18 @@ export default function Conta() {
     <>
       <h1 className="titulo-pag">Conta</h1>
       <div className="plano">
-        <b>Plano Executivo</b>
-        <span>Incluso com o seu AeroCar: telemetria em tempo real, alertas de segurança, histórico de voos e vários veículos na mesma conta.</span>
+        <b>{executivo ? 'Plano Executivo' : 'Conta pessoal'}</b>
+        <span>
+          {executivo
+            ? 'Vários veículos na mesma conta, com telemetria em tempo real, alertas de segurança e histórico de voos.'
+            : 'Acompanhe o seu AeroCar com telemetria em tempo real, alertas de segurança e histórico de voos. Com o plano Executivo, você acompanha vários veículos no mesmo painel.'}
+        </span>
+        <div className="cabine-acoes">
+          <button className={`btn ${executivo ? 'ghost' : 'red'} peq`} type="button" onClick={trocarPlano} disabled={trocando}>
+            {executivo ? 'Voltar para conta pessoal' : 'Ativar plano Executivo'}
+          </button>
+        </div>
+        {msgPlano.txt && <p className={`aviso ${msgPlano.tipo}`} role="status">{msgPlano.txt}</p>}
       </div>
       <div className="conta">
         <form className="compra-form" onSubmit={salvar} noValidate>

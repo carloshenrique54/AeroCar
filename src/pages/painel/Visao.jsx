@@ -7,7 +7,8 @@ import { comSinal, useAgora } from '../../lib/sinal'
 import VincularVeiculo from '../../components/VincularVeiculo'
 
 export default function Visao() {
-  const { user } = useAuth()
+  const { user, perfil } = useAuth()
+  const executivo = perfil?.tipo === 'executivo'
   const agora = useAgora()
   const [veiculos, setVeiculos] = useState([])
   const [voos, setVoos] = useState([])
@@ -81,7 +82,9 @@ export default function Visao() {
       <div className="cab-pag">
         <h1 className="titulo-pag">{veiculos.length > 1 ? 'Meus veículos' : 'Meu AeroCar'}</h1>
         <div className="cabine-acoes">
-          <button className="btn ghost" type="button" onClick={() => setVinculando((v) => !v)}>Vincular outro veículo</button>
+          {executivo && (
+            <button className="btn ghost" type="button" onClick={() => setVinculando((v) => !v)}>Vincular outro veículo</button>
+          )}
           <Link className="btn red" to="/painel/voos/novo">Novo plano de voo</Link>
         </div>
       </div>
@@ -94,6 +97,10 @@ export default function Visao() {
           }}
           onCancelar={() => setVinculando(false)}
         />
+      )}
+
+      {!executivo && (
+        <p className="muted">Tem mais de um AeroCar? Com o <Link to="/painel/conta">plano Executivo</Link> você acompanha todos no mesmo painel.</p>
       )}
 
       {veiculos.length > 1 && (

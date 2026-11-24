@@ -230,6 +230,7 @@ input[type='radio'] { width: 18px; min-height: 18px; accent-color: var(--red); m
 .plano { display: grid; gap: 4px; border: 1px solid var(--red); border-radius: 10px; padding: 14px 16px; background: color-mix(in srgb, var(--red) 8%, transparent); }
 .plano b { font-size: 17px; }
 .plano span { font-size: 14px; color: var(--muted); }
+.plano .cabine-acoes { margin-top: 8px; }
 .vazio.largo { max-width: 720px; justify-items: stretch; }
 .vincular { background: var(--deep); }
 .dispositivo { border-top: 1px solid var(--line); padding-top: 12px; }

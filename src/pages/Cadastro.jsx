@@ -8,7 +8,7 @@ export default function Cadastro() {
   const navigate = useNavigate()
   const location = useLocation()
   const destino = location.state?.de || '/painel'
-  const [f, setF] = useState({ nome: '', email: '', senha: '', telefone: '' })
+  const [f, setF] = useState({ nome: '', email: '', senha: '', telefone: '', tipo: 'pessoal' })
   const [erro, setErro] = useState('')
   const [confirmar, setConfirmar] = useState(false)
   const [enviando, setEnviando] = useState(false)
@@ -30,6 +30,7 @@ export default function Cadastro() {
       senha: f.senha,
       nome: f.nome.trim(),
       telefone: f.telefone.trim(),
+      tipo: f.tipo,
     })
     setEnviando(false)
     if (error) return setErro(erroAmigavel(error))
@@ -53,10 +54,19 @@ export default function Cadastro() {
     <section className="band auth">
       <form className="cartao-form auth-form" onSubmit={enviar} noValidate>
         <h1 className="auth-titulo">Criar conta</h1>
-        <div className="plano">
-          <b>Plano Executivo</b>
-          <span>Incluso com o seu AeroCar, sem mensalidade. Depois do cadastro, vincule o veículo com a matrícula e o código de ativação.</span>
-        </div>
+        <p className="muted">Depois do cadastro, vincule o seu AeroCar com a matrícula e o código de ativação entregues junto com o veículo.</p>
+
+        <fieldset className="opcoes">
+          <legend>Tipo de conta</legend>
+          <label className={`opcao ${f.tipo === 'pessoal' ? 'sel' : ''}`}>
+            <input type="radio" name="tipo" value="pessoal" checked={f.tipo === 'pessoal'} onChange={mudar} />
+            <span><b>Pessoal</b><small>Para acompanhar o seu AeroCar</small></span>
+          </label>
+          <label className={`opcao ${f.tipo === 'executivo' ? 'sel' : ''}`}>
+            <input type="radio" name="tipo" value="executivo" checked={f.tipo === 'executivo'} onChange={mudar} />
+            <span><b>Plano Executivo</b><small>Vários veículos na mesma conta</small></span>
+          </label>
+        </fieldset>
 
         <label htmlFor="nome">Nome completo<input id="nome" name="nome" value={f.nome} onChange={mudar} autoComplete="name" required /></label>
         <label htmlFor="telefone">Telefone<input id="telefone" name="telefone" type="tel" value={f.telefone} onChange={mudar} autoComplete="tel" /></label>
