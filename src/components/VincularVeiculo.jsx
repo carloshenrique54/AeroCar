@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { erroAmigavel } from '../lib/format'
+import { codigoAtivacao, matricula as mascaraMatricula } from '../lib/mascaras'
 
 export default function VincularVeiculo({ onVinculado, onCancelar }) {
   const [matricula, setMatricula] = useState('')
@@ -27,10 +28,10 @@ export default function VincularVeiculo({ onVinculado, onCancelar }) {
       <p className="muted">A matrícula e o código de ativação estão no cartão entregue junto com o veículo.</p>
       <div className="grade-campos">
         <label htmlFor="matricula">Matrícula
-          <input id="matricula" value={matricula} onChange={(e) => setMatricula(e.target.value.toUpperCase())} placeholder="AC-000" autoCapitalize="characters" />
+          <input id="matricula" value={matricula} onChange={(e) => setMatricula(mascaraMatricula(e.target.value))} placeholder="AC-001" autoCapitalize="characters" autoComplete="off" maxLength={8} />
         </label>
         <label htmlFor="codigo">Código de ativação
-          <input id="codigo" value={codigo} onChange={(e) => setCodigo(e.target.value.toUpperCase())} placeholder="XXXXXX" autoCapitalize="characters" />
+          <input id="codigo" value={codigo} onChange={(e) => setCodigo(codigoAtivacao(e.target.value))} placeholder="AERO01" autoCapitalize="characters" autoComplete="off" maxLength={6} />
         </label>
       </div>
       {erro && <p className="aviso erro" role="alert">{erro}</p>}

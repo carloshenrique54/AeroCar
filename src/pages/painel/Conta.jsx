@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
 import { erroAmigavel } from '../../lib/format'
+import { telefone, telefoneValido } from '../../lib/mascaras'
 
 export default function Conta() {
   const { user, perfil, recarregarPerfil } = useAuth()
@@ -24,14 +25,18 @@ export default function Conta() {
   }
 
   useEffect(() => {
-    if (perfil) setF({ nome: perfil.nome ?? '', telefone: perfil.telefone ?? '' })
+    if (perfil) setF({ nome: perfil.nome ?? '', telefone: telefone(perfil.telefone) })
   }, [perfil])
 
-  const mudar = (e) => setF({ ...f, [e.target.name]: e.target.value })
+  const mudar = (e) => {
+    const { name, value } = e.target
+    setF({ ...f, [name]: name === 'telefone' ? telefone(value) : value })
+  }
 
   const salvar = async (e) => {
     e.preventDefault()
     if (!f.nome.trim()) return setMsg({ tipo: 'erro', txt: 'Informe seu nome.' })
+    if (f.telefone && !telefoneValido(f.telefone)) return setMsg({ tipo: 'erro', txt: 'Telefone incompleto. Use DDD + número.' })
     const { error } = await supabase
       .from('perfis')
       .update({ nome: f.nome.trim(), telefone: f.telefone.trim() || null })
@@ -72,7 +77,7 @@ export default function Conta() {
           <h2 className="h-bloco">Seus dados</h2>
           <p className="muted">{user.email}</p>
           <label htmlFor="nome">Nome<input id="nome" name="nome" value={f.nome} onChange={mudar} autoComplete="name" /></label>
-          <label htmlFor="telefone">Telefone<input id="telefone" name="telefone" type="tel" value={f.telefone} onChange={mudar} autoComplete="tel" /></label>
+          <label htmlFor="telefone">Telefone<input id="telefone" name="telefone" type="tel" inputMode="tel" value={f.telefone} onChange={mudar} autoComplete="tel" placeholder="(11) 91234-5678" maxLength={15} /></label>
           <button className="btn red" type="submit">Salvar</button>
           {msg.txt && <p className={`aviso ${msg.tipo}`} role="status">{msg.txt}</p>}
         </form>
