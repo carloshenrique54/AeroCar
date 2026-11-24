@@ -59,7 +59,7 @@ As permissões ficam no próprio banco (Row Level Security), não só na interfa
 
 ---
 
-## ⚙ Stack Tecnológica
+## ◎ Stack Tecnológica
 
 ```
 ◆ Frontend      →  React 18.3.1 + Vite 5.4
