@@ -58,6 +58,15 @@ export default function Visao() {
     }
   }, [carregar, carregarVoos, user.id])
 
+  // Garantia: além do tempo real, confere bateria e sinal dos veículos a cada 3 s
+  useEffect(() => {
+    const timer = setInterval(async () => {
+      const { data } = await supabase.from('veiculos').select('*').order('matricula')
+      if (data) setVeiculos(data)
+    }, 3000)
+    return () => clearInterval(timer)
+  }, [])
+
   const renomear = async (id, apelido) => {
     const { error } = await supabase.from('veiculos').update({ apelido: apelido.trim() || null }).eq('id', id)
     if (error) return setErro(erroAmigavel(error))

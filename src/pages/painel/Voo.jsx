@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
@@ -22,8 +22,9 @@ export default function Voo() {
   const [enviando, setEnviando] = useState(false)
 
   const juntarLeitura = useCallback((nova) => {
-    setLeituras((atual) => (atual.some((l) => l.id === nova.id) ? atual : [...atual, nova]))
+    setLeituras((atual) => (atual.some((l) => l.id === nova.id) ? atual : [...atual, nova].sort((a, b) => a.id - b.id)))
   }, [])
+  const ultimoId = useRef(0)
 
   const juntarAlerta = useCallback((novo) => {
     setAlertas((atual) => (atual.some((a) => a.id === novo.id) ? atual : [novo, ...atual]))
@@ -74,6 +75,35 @@ export default function Voo() {
       supabase.removeChannel(canal)
     }
   }, [id, veiculoId, juntarLeitura, juntarAlerta])
+
+  // Garantia: além do tempo real, confere o banco a cada 2 s enquanto o voo está ativo
+  useEffect(() => {
+    ultimoId.current = leituras.length ? leituras[leituras.length - 1].id : 0
+  }, [leituras])
+
+  const ativo = voo?.status === 'planejado' || voo?.status === 'em_voo'
+  useEffect(() => {
+    if (!ativo || !veiculoId) return
+    let parado = false
+    const conferir = async () => {
+      const [t, ve, vo, a] = await Promise.all([
+        supabase.from('telemetria').select('*').eq('voo_id', id).gt('id', ultimoId.current).order('id'),
+        supabase.from('veiculos').select('*').eq('id', veiculoId).maybeSingle(),
+        supabase.from('voos').select('*').eq('id', id).maybeSingle(),
+        supabase.from('alertas').select('*').eq('voo_id', id).order('criado_em', { ascending: false }),
+      ])
+      if (parado) return
+      ;(t.data ?? []).forEach(juntarLeitura)
+      if (ve.data) setVeiculo((v) => ({ ...v, ...ve.data }))
+      if (vo.data) setVoo((v) => ({ ...v, ...vo.data }))
+      ;(a.data ?? []).forEach(juntarAlerta)
+    }
+    const timer = setInterval(conferir, 2000)
+    return () => {
+      parado = true
+      clearInterval(timer)
+    }
+  }, [ativo, id, veiculoId, juntarLeitura, juntarAlerta])
 
   const decolar = async () => {
     setErro('')

@@ -123,6 +123,12 @@ String campoJSON(const String &json, const char* campo) {
   return json.substring(i, fim);
 }
 
+// Conexão HTTPS mantida aberta entre os envios (keep-alive): sem isso, cada
+// envio refaz o handshake TLS, que no simulador leva alguns segundos.
+WiFiClientSecure cliente;
+HTTPClient http;
+unsigned long duracaoEnvioMs = 0;
+
 void enviarTelemetria(float altitude, float inclinacao, int bateria) {
   if (WiFi.status() != WL_CONNECTED) {
     plataformaOk = false;
@@ -130,11 +136,7 @@ void enviarTelemetria(float altitude, float inclinacao, int bateria) {
     return;
   }
 
-  WiFiClientSecure cliente;
-  cliente.setInsecure();   // sem verificação de certificado no simulador
-  HTTPClient http;
-  http.setTimeout(4000);
-
+  unsigned long inicio = millis();
   String url = String(SUPABASE_URL) + "/rest/v1/rpc/enviar_telemetria";
   if (!http.begin(cliente, url)) {
     plataformaOk = false;
@@ -163,7 +165,8 @@ void enviarTelemetria(float altitude, float inclinacao, int bateria) {
     Serial.print("Falha ao enviar telemetria. HTTP ");
     Serial.println(status);
   }
-  http.end();
+  http.end();   // com setReuse(true), a conexão continua aberta para o próximo envio
+  duracaoEnvioMs = millis() - inicio;
 }
 
 // ---------- Saída no terminal ----------
@@ -222,8 +225,12 @@ void imprimirPainel(float altitude, float inclinacao, int bateria, int rotorGrau
   Serial.println(tempoLigado());
   Serial.print  ("│  Plataforma  ");
   if (!plataformaOk)  Serial.println("sem conexão");
-  else if (emVoo)     Serial.println("conectado · EM VOO, enviando telemetria");
-  else                Serial.println("conectado · em solo, aguardando decolagem");
+  else {
+    Serial.print(emVoo ? "conectado · EM VOO, enviando telemetria" : "conectado · em solo, aguardando decolagem");
+    Serial.print("  (envio em ");
+    Serial.print(duracaoEnvioMs);
+    Serial.println(" ms)");
+  }
   Serial.println("├──────────────────────────────────────────────────────");
 
   // Altitude
@@ -319,6 +326,9 @@ void setup() {
   }
 
   Serial.println("\n══════════  AEROCAR · sistema de telemetria iniciado  ══════════");
+  cliente.setInsecure();   // sem verificação de certificado no simulador
+  http.setReuse(true);     // mantém a conexão aberta entre os envios
+  http.setTimeout(3000);
   conectarWiFi();
 }
 
