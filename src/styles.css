@@ -77,11 +77,11 @@ input[type='radio'] { width: 18px; min-height: 18px; accent-color: var(--red); m
 
 /* Hero */
 .hero { padding-bottom: 0; }
-.hero-top { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 40px; align-items: end; }
+.hero-top { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 40px; align-items: end; }
 .ctas { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 28px; }
-.hud { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-left: 1px solid var(--line); }
-.hud div { padding: 4px 18px; border-right: 1px solid var(--line); }
-.hud b { display: block; font-size: clamp(20px, 2.4vw, 30px); font-weight: 800; }
+.hud { display: grid; grid-template-columns: repeat(3, auto); justify-content: start; border-left: 1px solid var(--line); }
+.hud div { padding: 4px clamp(16px, 2.2vw, 28px); border-right: 1px solid var(--line); }
+.hud b { display: block; font-size: clamp(20px, 2.2vw, 28px); font-weight: 800; white-space: nowrap; }
 .hud span { font-size: 13px; color: var(--muted); }
 .scene { position: relative; height: clamp(260px, 36vw, 460px); margin: 40px calc(-1 * max(5vw, 16px)) 0; }
 .scene svg { position: absolute; inset: 0; width: 100%; height: 100%; }
@@ -266,7 +266,9 @@ input[type='radio'] { width: 18px; min-height: 18px; accent-color: var(--red); m
 }
 
 @media (max-width: 600px) {
+  .hud { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .hud div { padding: 4px 10px; }
+  .hud b { font-size: 18px; white-space: normal; overflow-wrap: anywhere; }
   .vr { border-left: 0; padding-left: 0; border-top: 1px solid #c9bdb3; padding-top: 28px; }
   .mv, .grade-campos { grid-template-columns: minmax(0, 1fr); }
   .medidores { gap: 8px; }
