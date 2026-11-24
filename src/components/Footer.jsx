@@ -8,7 +8,7 @@ export default function Footer() {
         <div>
           <Logo />
           <p className="rodape-txt">
-            Carro voador pessoal com telemetria em tempo real. Projeto nº 2 do Projeto Integrador Fábrica do Futuro.
+            Carro voador pessoal com telemetria em tempo real.
           </p>
         </div>
         <div>
@@ -30,9 +30,6 @@ export default function Footer() {
         </div>
         <div className="rodape-fim">
           <p>© 2026 AeroCar</p>
-          <p>
-            <Link to="/entrar">Área do proprietário</Link>
-          </p>
         </div>
       </div>
     </footer>
