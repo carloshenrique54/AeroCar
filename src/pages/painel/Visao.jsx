@@ -185,10 +185,6 @@ export default function Visao() {
         />
       )}
 
-      {pessoal && (
-        <p className="muted">Tem mais de um AeroCar? Com o <Link to="/painel/conta">plano Executivo</Link> você acompanha todos no mesmo painel.</p>
-      )}
-
       {gestor && (
         <div className="filtros">
           {frotas.length > 0 && (
