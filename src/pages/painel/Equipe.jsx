@@ -16,17 +16,20 @@ export default function Equipe() {
   const [busca, setBusca] = useState('')
   const [frotas, setFrotas] = useState([])
   const [membros, setMembros] = useState([])
+  const [veiculos, setVeiculos] = useState([])
   const [cadastrando, setCadastrando] = useState(null) // 'gerente' | 'piloto'
   const [erro, setErro] = useState('')
   const [aviso, setAviso] = useState('')
   const [carregando, setCarregando] = useState(true)
 
   const carregar = useCallback(async () => {
-    const [f, m] = await Promise.all([
+    const [f, m, v] = await Promise.all([
       supabase.from('frotas').select('*').order('nome'),
       supabase.from('membros').select('*, perfis(nome, telefone)').eq('ativo', true),
+      supabase.from('veiculos').select('id, matricula, apelido, frota_id, piloto_id').order('matricula'),
     ])
-    const e = f.error || m.error
+    setVeiculos(v.data ?? [])
+    const e = f.error || m.error || v.error
     if (e) setErro(erroAmigavel(e))
     setFrotas(f.data ?? [])
     setMembros((m.data ?? []).sort((a, b) => (a.perfis?.nome ?? '').localeCompare(b.perfis?.nome ?? '')))
@@ -96,6 +99,7 @@ export default function Equipe() {
           papel={cadastrando}
           titular={titular}
           frotas={frotas}
+          veiculos={veiculos}
           frotaInicial={frotaAtual?.id ?? frotas[0]?.id ?? ''}
           frotaDoGerente={frotas.find((f) => f.id === conta?.frota_id)}
           onCancelar={() => setCadastrando(null)}
@@ -138,6 +142,7 @@ export default function Equipe() {
               key={m.user_id}
               m={m}
               frota={nomeFrota(m.frota_id)}
+              veiculo={veiculos.find((v) => v.piloto_id === m.user_id)}
               frotas={frotas}
               editavel={titular}
               removivel={titular || (papel === 'gerente' && m.papel === 'piloto' && m.frota_id === conta?.frota_id)}
@@ -152,7 +157,7 @@ export default function Equipe() {
   )
 }
 
-function LinhaPessoa({ m, frota, frotas, editavel, removivel, executar }) {
+function LinhaPessoa({ m, frota, veiculo, frotas, editavel, removivel, executar }) {
   const [editando, setEditando] = useState(false)
   const [papel, setPapel] = useState(m.papel)
   const [frotaId, setFrotaId] = useState(m.frota_id ?? '')
@@ -162,7 +167,11 @@ function LinhaPessoa({ m, frota, frotas, editavel, removivel, executar }) {
     <li className={editando ? 'editando' : ''}>
       <div>
         <b>{nome}</b>
-        <small>{frota || 'Sem frota'} · {m.perfis?.telefone || 'sem telefone'}</small>
+        <small>
+          {frota || 'Sem frota'}
+          {m.papel === 'piloto' ? ` · ${veiculo ? `veículo ${veiculo.apelido ? `${veiculo.apelido} (${veiculo.matricula})` : veiculo.matricula}` : 'sem veículo designado'}` : ''}
+          {' · '}{m.perfis?.telefone || 'sem telefone'}
+        </small>
       </div>
       <span className={`selo papel-${m.papel}`}>{PAPEL[m.papel]}</span>
 

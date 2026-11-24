@@ -79,16 +79,20 @@ const gerarSenha = () => {
  * Cadastra gerente ou piloto com login próprio.
  * Titular escolhe a frota; o gerente cadastra pilotos na própria frota.
  */
-export function FormPessoa({ papel, titular, frotas, frotaInicial, frotaDoGerente, onCriada, onCancelar }) {
-  const [f, setF] = useState({ nome: '', email: '', telefone: '', frota: frotaInicial ?? '', senha: gerarSenha() })
+export function FormPessoa({ papel, titular, frotas, veiculos = [], frotaInicial, frotaDoGerente, onCriada, onCancelar }) {
+  const [f, setF] = useState({ nome: '', email: '', telefone: '', frota: frotaInicial ?? '', veiculo: '', senha: gerarSenha() })
   const [erro, setErro] = useState('')
   const [enviando, setEnviando] = useState(false)
   const nomePapel = papel === 'gerente' ? 'gerente' : 'piloto'
 
   const mudar = (e) => {
     const { name, value } = e.target
-    setF({ ...f, [name]: name === 'telefone' ? mascaraTelefone(value) : value })
+    setF({ ...f, [name]: name === 'telefone' ? mascaraTelefone(value) : value, ...(name === 'frota' ? { veiculo: '' } : {}) })
   }
+
+  // Veículos que podem ser do novo piloto: os da frota escolhida (ou da frota do gerente)
+  const frotaDoVeiculo = titular ? f.frota : frotaDoGerente?.id
+  const opcoesVeiculo = veiculos.filter((v) => (frotaDoVeiculo ? v.frota_id === frotaDoVeiculo : true))
 
   const enviar = async (e) => {
     e.preventDefault()
@@ -106,6 +110,7 @@ export function FormPessoa({ papel, titular, frotas, frotaInicial, frotaDoGerent
       p_papel: nomePapel,
       p_frota: titular ? f.frota || null : null,
       p_senha: f.senha,
+      p_veiculo: nomePapel === 'piloto' && f.veiculo ? f.veiculo : null,
     })
     setEnviando(false)
     if (error) return setErro(erroAmigavel(error))
@@ -133,7 +138,19 @@ export function FormPessoa({ papel, titular, frotas, frotaInicial, frotaDoGerent
             </select>
           </label>
         )}
-        <label className={titular ? 'largo' : ''} htmlFor="p-senha">Senha inicial
+        {nomePapel === 'piloto' && (
+          <label htmlFor="p-veiculo">Veículo designado
+            <select id="p-veiculo" name="veiculo" value={f.veiculo} onChange={mudar}>
+              <option value="">Designar depois</option>
+              {opcoesVeiculo.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {(v.apelido ? `${v.apelido} · ` : '') + v.matricula + (v.piloto_id ? ' (troca o piloto atual)' : '')}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        <label className={titular && nomePapel !== 'piloto' ? 'largo' : ''} htmlFor="p-senha">Senha inicial
           <span className="campo-acao">
             <input id="p-senha" name="senha" value={f.senha} onChange={mudar} autoComplete="new-password" />
             <button className="btn ghost peq" type="button" onClick={() => setF({ ...f, senha: gerarSenha() })}>Gerar outra</button>
