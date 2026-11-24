@@ -127,6 +127,7 @@ export default function Visao() {
 
       {vinculando && (
         <VincularVeiculo
+          frotas={titular ? frotas : undefined}
           onVinculado={() => {
             setVinculando(false)
             carregar()

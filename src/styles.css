@@ -255,6 +255,12 @@ input[type='radio'] { width: 18px; min-height: 18px; accent-color: var(--red); m
 .pessoas { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
 .pessoas li { display: grid; border-left: 3px solid var(--steel); padding-left: 10px; }
 .pessoas small { color: var(--muted); font-size: 13px; }
+.pessoas li.editando { gap: 10px; border-left-color: var(--red); padding: 4px 0 4px 10px; }
+.pessoa-acoes { display: flex; gap: 12px; flex-wrap: wrap; font-size: 13px; margin-top: 2px; }
+.confirmar { display: inline-flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 13px; color: var(--cream); }
+.mover select { min-height: 36px; font-size: 14px; padding: 0 8px; width: auto; }
+.campo-acao { display: flex; gap: 8px; }
+.campo-acao input { flex: 1; }
 @media (max-width: 700px) { .frota-cols { grid-template-columns: minmax(0, 1fr); } }
 
 /* Rodapé */
