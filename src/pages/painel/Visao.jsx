@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
 import { dataHora, erroAmigavel, numero, STATUS_VEICULO, STATUS_VOO } from '../../lib/format'
@@ -7,10 +7,13 @@ import { comSinal, useAgora } from '../../lib/sinal'
 import VincularVeiculo from '../../components/VincularVeiculo'
 
 export default function Visao() {
-  const { user, papel, conta } = useAuth()
+  const { user, papel } = useAuth()
   const titular = papel === 'titular'
   const pessoal = papel === 'pessoal'
   const agora = useAgora()
+  const [params, setParams] = useSearchParams()
+  const filtroFrota = params.get('frota') || ''
+  const [busca, setBusca] = useState('')
   const [veiculos, setVeiculos] = useState([])
   const [frotas, setFrotas] = useState([])
   const [voos, setVoos] = useState([])
@@ -18,6 +21,7 @@ export default function Visao() {
   const [carregando, setCarregando] = useState(true)
   const [vinculando, setVinculando] = useState(false)
   const [erro, setErro] = useState('')
+  const [aviso, setAviso] = useState('')
 
   const carregarVoos = useCallback(async () => {
     const [vo, a] = await Promise.all([
@@ -73,9 +77,25 @@ export default function Visao() {
     setVeiculos((lista) => lista.map((v) => (v.id === id ? { ...v, apelido: apelido.trim() || null } : v)))
   }
 
+  const mover = async (v, frotaId) => {
+    setErro('')
+    const { error } = await supabase.rpc('mover_veiculo', { p_veiculo: v.id, p_frota: frotaId || null })
+    if (error) return setErro(erroAmigavel(error))
+    setVeiculos((lista) => lista.map((x) => (x.id === v.id ? { ...x, frota_id: frotaId || null } : x)))
+    const nome = frotas.find((f) => f.id === frotaId)?.nome
+    setAviso(`${v.matricula} ${nome ? `agora está na ${nome}` : 'agora está sem frota'}.`)
+  }
+
   const marcarLido = async (id) => {
     await supabase.from('alertas').update({ lido: true }).eq('id', id)
     setAlertas((a) => a.filter((x) => x.id !== id))
+  }
+
+  const escolherFrota = (valor) => {
+    const p = new URLSearchParams(params)
+    if (valor) p.set('frota', valor)
+    else p.delete('frota')
+    setParams(p, { replace: true })
   }
 
   if (carregando) return <p className="carregando">Carregando…</p>
@@ -92,34 +112,40 @@ export default function Visao() {
   if (!veiculos.length) {
     return (
       <div className="vazio largo">
-        <h1 className="titulo-pag">Vincule o seu AeroCar</h1>
+        <h1 className="titulo-pag">{titular ? 'Vincule os veículos da empresa' : 'Vincule o seu AeroCar'}</h1>
         <p className="muted">Para acompanhar a telemetria e registrar planos de voo, vincule o veículo à sua conta.</p>
-        <VincularVeiculo onVinculado={carregar} />
+        <VincularVeiculo frotas={titular ? frotas : undefined} onVinculado={carregar} />
       </div>
     )
   }
 
-  const online = veiculos.filter((v) => comSinal(v.ultimo_sinal, agora)).length
+  const frotaAtual = frotas.find((f) => f.id === filtroFrota)
+  const q = busca.trim().toLowerCase()
+  const lista = veiculos.filter((v) => {
+    if (filtroFrota === 'sem' && v.frota_id) return false
+    if (filtroFrota && filtroFrota !== 'sem' && v.frota_id !== filtroFrota) return false
+    return !q || `${v.matricula} ${v.apelido ?? ''}`.toLowerCase().includes(q)
+  })
+  const idsLista = new Set(lista.map((v) => v.id))
+  const voosLista = voos.filter((v) => idsLista.has(v.veiculo_id))
+  const online = lista.filter((v) => comSinal(v.ultimo_sinal, agora)).length
+  const emVoo = lista.filter((v) => v.status === 'em_voo').length
+  const nomeFrota = (id) => frotas.find((f) => f.id === id)?.nome
+
   const titulo = pessoal
     ? veiculos.length > 1 ? 'Meus veículos' : 'Meu AeroCar'
-    : papel === 'titular' ? conta?.empresa || 'Frotas' : conta?.frota_nome || 'Veículos da frota'
-
-  // Agrupa por frota (contas executivas); veículos sem frota ficam num grupo próprio
-  const grupos = pessoal || !frotas.length
-    ? [{ id: 'todos', nome: null, veiculos }]
-    : [
-        ...frotas.map((f) => ({ ...f, veiculos: veiculos.filter((v) => v.frota_id === f.id) })),
-        { id: 'sem-frota', nome: 'Sem frota', veiculos: veiculos.filter((v) => !v.frota_id) },
-      ].filter((g) => g.veiculos.length)
-  const emVoo = veiculos.filter((v) => v.status === 'em_voo').length
+    : frotaAtual ? `Veículos · ${frotaAtual.nome}` : filtroFrota === 'sem' ? 'Veículos sem frota' : 'Veículos'
 
   return (
     <>
       <div className="cab-pag">
-        <h1 className="titulo-pag">{titulo}</h1>
+        <div>
+          <h1 className="titulo-pag">{titulo}</h1>
+          {frotaAtual?.base && <p className="muted">Base: {frotaAtual.base}</p>}
+        </div>
         <div className="cabine-acoes">
           {titular && (
-            <button className="btn ghost" type="button" onClick={() => setVinculando((v) => !v)}>Vincular outro veículo</button>
+            <button className="btn ghost" type="button" onClick={() => setVinculando((v) => !v)}>Vincular veículo</button>
           )}
           <Link className="btn red" to="/painel/voos/novo">Novo plano de voo</Link>
         </div>
@@ -128,6 +154,7 @@ export default function Visao() {
       {vinculando && (
         <VincularVeiculo
           frotas={titular ? frotas : undefined}
+          frotaInicial={frotaAtual?.id ?? ''}
           onVinculado={() => {
             setVinculando(false)
             carregar()
@@ -140,15 +167,33 @@ export default function Visao() {
         <p className="muted">Tem mais de um AeroCar? Com o <Link to="/painel/conta">plano Executivo</Link> você acompanha todos no mesmo painel.</p>
       )}
 
-      {veiculos.length > 1 && (
+      {!pessoal && (
+        <div className="filtros">
+          {frotas.length > 0 && (
+            <label htmlFor="filtro-frota">Frota
+              <select id="filtro-frota" value={filtroFrota} onChange={(e) => escolherFrota(e.target.value)}>
+                <option value="">Todas as frotas</option>
+                {frotas.map((f) => <option key={f.id} value={f.id}>{f.nome}</option>)}
+                {titular && <option value="sem">Sem frota</option>}
+              </select>
+            </label>
+          )}
+          <label htmlFor="busca-veiculo">Buscar veículo
+            <input id="busca-veiculo" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Matrícula ou apelido" />
+          </label>
+        </div>
+      )}
+
+      {!pessoal && (
         <div className="numeros">
-          <div><b>{veiculos.length}</b><span>veículos na conta</span></div>
+          <div><b>{lista.length}</b><span>veículos{filtroFrota ? ' no filtro' : ''}</span></div>
           <div><b>{online}</b><span>com sinal agora</span></div>
           <div><b>{emVoo}</b><span>em voo</span></div>
         </div>
       )}
 
       {erro && <p className="aviso erro" role="alert">{erro}</p>}
+      {aviso && <p className="aviso ok" role="status">{aviso}</p>}
 
       {alertas.length > 0 && (
         <div className="alertas">
@@ -167,11 +212,11 @@ export default function Visao() {
         </div>
       )}
 
-      {voos.length > 0 && (
+      {voosLista.length > 0 && (
         <div className="bloco">
           <h2 className="h-bloco">Voos em andamento e planejados</h2>
           <ul className="lista">
-            {voos.map((v) => (
+            {voosLista.map((v) => (
               <li key={v.id}>
                 <div>
                   <b>{v.origem} a {v.destino}</b>
@@ -185,33 +230,30 @@ export default function Visao() {
         </div>
       )}
 
-      {grupos.map((g) => (
-        <section key={g.id} className="grupo">
-          {g.nome && (
-            <div className="grupo-topo">
-              <h2 className="h-bloco">{g.nome}</h2>
-              {g.base && <span className="muted">Base: {g.base}</span>}
-            </div>
-          )}
-          <div className="veiculos">
-            {g.veiculos.map((v) => (
-              <CartaoVeiculo
-                key={v.id}
-                v={v}
-                online={comSinal(v.ultimo_sinal, agora)}
-                podeRenomear={titular || pessoal}
-                onRenomear={renomear}
-                voo={voos.find((x) => x.veiculo_id === v.id && x.status === 'em_voo')}
-              />
-            ))}
-          </div>
-        </section>
-      ))}
+      {lista.length ? (
+        <div className="veiculos">
+          {lista.map((v) => (
+            <CartaoVeiculo
+              key={v.id}
+              v={v}
+              online={comSinal(v.ultimo_sinal, agora)}
+              frota={pessoal ? null : nomeFrota(v.frota_id) || 'Sem frota'}
+              frotas={titular ? frotas : null}
+              podeRenomear={titular || pessoal}
+              onRenomear={renomear}
+              onMover={mover}
+              voo={voos.find((x) => x.veiculo_id === v.id && x.status === 'em_voo')}
+            />
+          ))}
+        </div>
+      ) : (
+        <p className="muted">Nenhum veículo {filtroFrota ? 'nesta frota' : 'encontrado'}.</p>
+      )}
     </>
   )
 }
 
-function CartaoVeiculo({ v, voo, online, podeRenomear, onRenomear }) {
+function CartaoVeiculo({ v, voo, online, frota, frotas, podeRenomear, onRenomear, onMover }) {
   const [editando, setEditando] = useState(false)
   const [nome, setNome] = useState(v.apelido ?? '')
   const [copiado, setCopiado] = useState(false)
@@ -248,6 +290,7 @@ function CartaoVeiculo({ v, voo, online, podeRenomear, onRenomear }) {
             <h3>{v.apelido || 'AeroCar'}</h3>
             <small className="muted">
               Matrícula {v.matricula}
+              {frota && !frotas ? ` · ${frota}` : ''}
               {podeRenomear && <> · <button type="button" className="link-btn" onClick={() => setEditando(true)}>renomear</button></>}
             </small>
           </div>
@@ -265,6 +308,15 @@ function CartaoVeiculo({ v, voo, online, podeRenomear, onRenomear }) {
         <b>{numero(bat)}%</b>
         <div className="barra"><i style={{ width: `${bat}%` }} /></div>
       </div>
+
+      {frotas && (
+        <label htmlFor={`frota-${v.id}`}>Frota
+          <select id={`frota-${v.id}`} value={v.frota_id ?? ''} onChange={(e) => onMover(v, e.target.value)}>
+            <option value="">Sem frota</option>
+            {frotas.map((f) => <option key={f.id} value={f.id}>{f.nome}</option>)}
+          </select>
+        </label>
+      )}
 
       <div className="veiculo-acoes">
         {voo ? (
