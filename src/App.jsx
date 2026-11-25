@@ -28,6 +28,8 @@ function RolarParaTopo() {
   return null
 }
 
+const GESTORES = ['titular', 'gerente']
+
 export default function App() {
   return (
     <>
@@ -44,8 +46,8 @@ export default function App() {
             <Route path="voos/novo" element={<NovoVoo />} />
             <Route path="voos/:id" element={<Voo />} />
             <Route path="historico" element={<Historico />} />
-            <Route path="frotas" element={<Frotas />} />
-            <Route path="equipe" element={<Equipe />} />
+            <Route path="frotas" element={<RotaProtegida papeis={GESTORES}><Frotas /></RotaProtegida>} />
+            <Route path="equipe" element={<RotaProtegida papeis={GESTORES}><Equipe /></RotaProtegida>} />
             <Route path="conta" element={<Conta />} />
           </Route>
           <Route path="*" element={<NaoEncontrado />} />

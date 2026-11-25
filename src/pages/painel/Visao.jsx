@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
 import { dataHora, erroAmigavel, numero, STATUS_VEICULO, STATUS_VOO } from '../../lib/format'
@@ -14,6 +14,7 @@ export default function Visao() {
   const gestor = papel === 'titular' || papel === 'gerente'
   const agora = useAgora()
   const [params, setParams] = useSearchParams()
+  const restrito = useLocation().state?.restrito
   const filtroFrota = params.get('frota') || ''
   const [busca, setBusca] = useState('')
   const [veiculos, setVeiculos] = useState([])
@@ -210,6 +211,7 @@ export default function Visao() {
         </div>
       )}
 
+      {restrito && <p className="aviso erro" role="alert">Acesso restrito: essa página é só para o titular e os gerentes da conta.</p>}
       {erro && <p className="aviso erro" role="alert">{erro}</p>}
       {aviso && <p className="aviso ok" role="status">{aviso}</p>}
 
