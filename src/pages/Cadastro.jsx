@@ -39,6 +39,11 @@ export default function Cadastro() {
     })
     setEnviando(false)
     if (error) return setErro(erroAmigavel(error))
+    // Com "Confirm email" ligado, o Supabase não devolve erro para e-mail já
+    // cadastrado: responde um usuário sem identidade vinculada e não cria nada.
+    if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+      return setErro('Já existe uma conta com este e-mail. Entre com ela ou use "Esqueci minha senha".')
+    }
     if (data.session) navigate(destino, { replace: true })
     else setConfirmar(true)
   }
