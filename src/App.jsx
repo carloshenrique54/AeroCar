@@ -12,6 +12,7 @@ import Visao from './pages/painel/Visao'
 import NovoVoo from './pages/painel/NovoVoo'
 import Voo from './pages/painel/Voo'
 import Historico from './pages/painel/Historico'
+import Alertas from './pages/painel/Alertas'
 import Conta from './pages/painel/Conta'
 import Equipe from './pages/painel/Equipe'
 import Frotas from './pages/painel/Frotas'
@@ -46,6 +47,7 @@ export default function App() {
             <Route path="voos/novo" element={<NovoVoo />} />
             <Route path="voos/:id" element={<Voo />} />
             <Route path="historico" element={<Historico />} />
+            <Route path="alertas" element={<Alertas />} />
             <Route path="frotas" element={<RotaProtegida papeis={GESTORES}><Frotas /></RotaProtegida>} />
             <Route path="equipe" element={<RotaProtegida papeis={GESTORES}><Equipe /></RotaProtegida>} />
             <Route path="conta" element={<Conta />} />

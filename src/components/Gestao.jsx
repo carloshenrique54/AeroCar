@@ -210,3 +210,31 @@ export function ConfirmarExclusao({ titulo, children, rotuloCampo, esperado, bot
     </div>
   )
 }
+
+/** Janela de confirmação simples, com duas ações. */
+export function Dialogo({ titulo, children, confirmar, voltar = 'Voltar', onConfirmar, onVoltar }) {
+  const [enviando, setEnviando] = useState(false)
+  const [erro, setErro] = useState('')
+
+  const ok = async () => {
+    setErro('')
+    setEnviando(true)
+    const msg = await onConfirmar()
+    setEnviando(false)
+    if (msg) setErro(msg)
+  }
+
+  return (
+    <div className="modal-fundo" role="presentation" onClick={(e) => e.target === e.currentTarget && !enviando && onVoltar()}>
+      <div className="modal" role="alertdialog" aria-modal="true" aria-labelledby="dialogo-titulo">
+        <h2 id="dialogo-titulo" className="h-bloco">{titulo}</h2>
+        <div className="modal-texto">{children}</div>
+        {erro && <p className="aviso erro" role="alert">{erro}</p>}
+        <div className="cabine-acoes">
+          <button className="btn red" type="button" onClick={ok} disabled={enviando}>{enviando ? 'Aguarde…' : confirmar}</button>
+          <button className="btn ghost" type="button" onClick={onVoltar} disabled={enviando} autoFocus>{voltar}</button>
+        </div>
+      </div>
+    </div>
+  )
+}

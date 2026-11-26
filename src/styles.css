@@ -336,3 +336,18 @@ input[type='radio'] { width: 18px; min-height: 18px; accent-color: var(--red); m
 .modal label { display: grid; gap: 6px; font-size: 14px; font-weight: 600; }
 .modal .cabine-acoes { display: flex; gap: 10px; flex-wrap: wrap; }
 .modal .btn:disabled { opacity: .45; cursor: not-allowed; }
+
+/* Alertas e leituras */
+.painel-menu a { display: flex; align-items: center; gap: 8px; }
+.contador { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--red); color: #fff; font-size: 12px; font-weight: 800; line-height: 1; }
+.abas { display: flex; gap: 6px; border-bottom: 1px solid var(--line); margin: 4px 0 20px; flex-wrap: wrap; }
+.abas button { display: inline-flex; align-items: center; gap: 8px; background: none; border: 0; border-bottom: 3px solid transparent; color: var(--muted); font: inherit; font-weight: 700; padding: 10px 14px; margin-bottom: -1px; cursor: pointer; }
+.abas button:hover { color: var(--cream); }
+.abas button.ativa { color: var(--cream); border-bottom-color: var(--red); }
+.tabela tr.lido td { opacity: .62; }
+.tabela tr.nao-lido td:first-child { box-shadow: inset 3px 0 0 var(--red); padding-left: 10px; }
+.alerta-msg { display: block; margin-top: 6px; color: var(--muted); font-size: 13px; }
+.selo.alerta-bateria_critica { background: color-mix(in srgb, var(--red) 34%, var(--deep)); }
+.selo.alerta-altitude_excedida { background: color-mix(in srgb, #e0a52b 30%, var(--deep)); }
+.selo.alerta-inclinacao { background: color-mix(in srgb, #5b8def 30%, var(--deep)); }
+.tabela td.fora { color: #ff6b72; font-weight: 700; }

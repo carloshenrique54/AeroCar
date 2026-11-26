@@ -21,20 +21,15 @@ export default function Visao() {
   const [frotas, setFrotas] = useState([])
   const [pilotos, setPilotos] = useState([])
   const [voos, setVoos] = useState([])
-  const [alertas, setAlertas] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [vinculando, setVinculando] = useState(false)
   const [erro, setErro] = useState('')
   const [aviso, setAviso] = useState('')
 
   const carregarVoos = useCallback(async () => {
-    const [vo, a] = await Promise.all([
-      supabase.from('voos_resumo').select('*').in('status', ['planejado', 'em_voo']).order('criado_em', { ascending: false }),
-      supabase.from('alertas').select('*, voos(origem, destino)').eq('lido', false).order('criado_em', { ascending: false }).limit(5),
-    ])
-    if (vo.error || a.error) setErro(erroAmigavel(vo.error || a.error))
+    const vo = await supabase.from('voos_resumo').select('*').in('status', ['planejado', 'em_voo']).order('criado_em', { ascending: false })
+    if (vo.error) setErro(erroAmigavel(vo.error))
     setVoos(vo.data ?? [])
-    setAlertas(a.data ?? [])
   }, [])
 
   const carregar = useCallback(async () => {
@@ -61,7 +56,6 @@ export default function Visao() {
         setVeiculos((lista) => (lista.some((v) => v.id === p.new.id) ? lista.map((v) => (v.id === p.new.id ? { ...v, ...p.new } : v)) : lista)),
       )
       .on('postgres_changes', { event: '*', schema: 'public', table: 'voos' }, carregarVoos)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'alertas' }, carregarVoos)
       .subscribe()
     return () => {
       supabase.removeChannel(canal)
@@ -102,11 +96,6 @@ export default function Visao() {
     )
     const nome = pilotos.find((p) => p.user_id === pilotoId)?.perfis?.nome
     setAviso(nome ? `${nome} agora é o piloto do ${v.matricula}.` : `${v.matricula} ficou sem piloto designado.`)
-  }
-
-  const marcarLido = async (id) => {
-    await supabase.from('alertas').update({ lido: true }).eq('id', id)
-    setAlertas((a) => a.filter((x) => x.id !== id))
   }
 
   const escolherFrota = (valor) => {
@@ -214,23 +203,6 @@ export default function Visao() {
       {restrito && <p className="aviso erro" role="alert">Acesso restrito: essa página é só para o titular e os gerentes da conta.</p>}
       {erro && <p className="aviso erro" role="alert">{erro}</p>}
       {aviso && <p className="aviso ok" role="status">{aviso}</p>}
-
-      {alertas.length > 0 && (
-        <div className="alertas">
-          {alertas.map((a) => (
-            <div key={a.id} className="alerta show">
-              <div>
-                <b>{a.mensagem}</b>
-                <small>{a.voos ? `${a.voos.origem} a ${a.voos.destino} · ` : ''}{dataHora(a.criado_em)}</small>
-              </div>
-              <div className="alerta-acoes">
-                <Link to={`/painel/voos/${a.voo_id}`}>Ver voo</Link>
-                <button type="button" className="link-btn" onClick={() => marcarLido(a.id)}>Dispensar</button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
 
       {voosLista.length > 0 && (
         <div className="bloco">

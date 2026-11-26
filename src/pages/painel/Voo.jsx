@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useBlocker, useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import Medidores from '../../components/Medidores'
 import LineChart from '../../components/LineChart'
 import { dataHora, duracao, erroAmigavel, numero, STATUS_VOO } from '../../lib/format'
 import { comSinal, useAgora } from '../../lib/sinal'
+import { Dialogo } from '../../components/Gestao'
 
 export default function Voo() {
   const { id } = useParams()
@@ -123,10 +124,44 @@ export default function Voo() {
     setVoo(data)
   }
 
-  const cancelar = async () => {
+  // Plano de voo que ainda não decolou: só sai da página cancelando o plano.
+  const [confirmarCancelar, setConfirmarCancelar] = useState(false)
+  const saindoCancelado = useRef(false)
+  const planoAberto = voo?.status === 'planejado' && voo?.user_id === user.id
+  const bloqueio = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      planoAberto && !saindoCancelado.current && currentLocation.pathname !== nextLocation.pathname,
+  )
+
+  useEffect(() => {
+    if (!planoAberto) return undefined
+    const avisar = (e) => {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', avisar)
+    return () => window.removeEventListener('beforeunload', avisar)
+  }, [planoAberto])
+
+  const cancelarPlano = async () => {
     const { error } = await supabase.from('voos').update({ status: 'cancelado' }).eq('id', id)
-    if (error) return setErro(erroAmigavel(error))
+    if (error) return erroAmigavel(error)
+    saindoCancelado.current = true
+    return null
+  }
+
+  const cancelar = async () => {
+    const msg = await cancelarPlano()
+    if (msg) return msg
     navigate('/painel')
+    return null
+  }
+
+  const sairCancelando = async () => {
+    const msg = await cancelarPlano()
+    if (msg) return msg
+    bloqueio.proceed?.()
+    return null
   }
 
   if (carregando) return <p className="carregando">Carregando…</p>
@@ -148,6 +183,28 @@ export default function Voo() {
 
   return (
     <>
+      {confirmarCancelar && (
+        <Dialogo
+          titulo="Cancelar plano de voo?"
+          confirmar="Cancelar plano"
+          voltar="Manter plano"
+          onVoltar={() => setConfirmarCancelar(false)}
+          onConfirmar={cancelar}
+        >
+          <p>O plano {voo.origem} a {voo.destino} fica no histórico como cancelado. Para voar, será preciso criar um novo plano.</p>
+        </Dialogo>
+      )}
+      {bloqueio.state === 'blocked' && (
+        <Dialogo
+          titulo="Sair e cancelar o plano?"
+          confirmar="Cancelar plano e sair"
+          voltar="Ficar no plano"
+          onVoltar={() => bloqueio.reset?.()}
+          onConfirmar={sairCancelando}
+        >
+          <p>Este plano de voo ainda não decolou. Se você sair desta página, ele será cancelado e ficará no histórico como cancelado.</p>
+        </Dialogo>
+      )}
       <div className="cab-pag">
         <div>
           <h1 className="titulo-pag">{voo.origem} a {voo.destino}</h1>
@@ -212,7 +269,7 @@ export default function Voo() {
           {voo.status === 'planejado' && meuVoo && (
             <>
               <button className="btn red" type="button" onClick={decolar} disabled={enviando || !online}>Decolar</button>
-              <button className="btn ghost" type="button" onClick={cancelar}>Cancelar plano</button>
+              <button className="btn ghost" type="button" onClick={() => setConfirmarCancelar(true)}>Cancelar plano</button>
               <span className="muted">
                 {online ? `Veículo conectado · bateria ${numero(veiculo?.bateria)}%` : 'Ligue o veículo para liberar a decolagem.'}
               </span>
