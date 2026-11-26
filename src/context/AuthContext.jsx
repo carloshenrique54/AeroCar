@@ -8,11 +8,14 @@ export function AuthProvider({ children }) {
   const [perfil, setPerfil] = useState(null)
   const [conta, setConta] = useState(null)
   const [carregando, setCarregando] = useState(true)
+  // id do usuário cujo perfil já foi carregado (evita mostrar o painel com o perfil anterior)
+  const [perfilDe, setPerfilDe] = useState(null)
 
   const carregarPerfil = useCallback(async (userId) => {
     if (!userId) {
       setPerfil(null)
       setConta(null)
+      setPerfilDe(null)
       return
     }
     const [{ data }, { data: c }] = await Promise.all([
@@ -21,6 +24,7 @@ export function AuthProvider({ children }) {
     ])
     setPerfil(data)
     setConta(c)
+    setPerfilDe(userId)
   }, [])
 
   useEffect(() => {
@@ -59,7 +63,7 @@ export function AuthProvider({ children }) {
     // papel: pessoal | titular | gerente | piloto
     conta,
     papel: conta?.papel ?? (perfil?.tipo === 'executivo' ? 'titular' : 'pessoal'),
-    carregando,
+    carregando: carregando || (!!session?.user && perfilDe !== session.user.id),
     entrar,
     cadastrar,
     sair,

@@ -49,7 +49,7 @@ export default function PainelLayout() {
             <small>{detalhe}</small>
           </p>
           {gestor && <NavLink to="/painel/frotas">{papel === 'gerente' ? 'Minha frota' : 'Frotas'}</NavLink>}
-          <NavLink end to="/painel">{papel === 'pessoal' ? 'Meu AeroCar' : 'Veículos'}</NavLink>
+          <NavLink end to="/painel">{papel === 'pessoal' ? 'Meu AeroCar' : papel === 'piloto' ? 'Meu veículo' : 'Veículos'}</NavLink>
           {gestor && <NavLink to="/painel/equipe">Equipe</NavLink>}
           <NavLink to="/painel/voos/novo">Novo plano de voo</NavLink>
           <NavLink to="/painel/historico">Histórico de voos</NavLink>

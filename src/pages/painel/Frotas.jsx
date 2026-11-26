@@ -78,7 +78,7 @@ export default function Frotas() {
           onCancelar={() => setCriando(false)}
           onCriada={(f) => {
             setCriando(false)
-            setAviso(`Frota ${f.nome} criada. Agora coloque veículos nela pela lista de veículos ou cadastre a equipe.`)
+            setAviso(`${/^frota\b/i.test(f.nome) ? f.nome : `Frota ${f.nome}`} criada. Agora coloque veículos nela pela lista de veículos ou cadastre a equipe.`)
             carregar()
           }}
         />

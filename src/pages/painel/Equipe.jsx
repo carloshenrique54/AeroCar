@@ -178,7 +178,7 @@ function LinhaPessoa({ m, frota, veiculo, frotas, editavel, removivel, executar 
             return ok ? null : 'Não foi possível excluir. Veja o aviso no topo da página.'
           }}
         >
-          <p>O login de {nome.split(' ')[0]} é apagado e não pode ser recuperado. Os voos que {m.papel === 'piloto' ? 'ele fez' : 'ele registrou'} continuam no histórico da empresa, e os planos de voo pendentes são cancelados.</p>
+          <p>O login de {nome.split(' ')[0]} é apagado e não pode ser recuperado. Os voos {m.papel === 'piloto' ? 'feitos' : 'registrados'} por {nome.split(' ')[0]} continuam no histórico da empresa, e os planos de voo pendentes são cancelados.</p>
         </ConfirmarExclusao>
       )}
       <div>

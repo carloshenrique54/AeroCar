@@ -99,7 +99,7 @@ export default function Conta() {
           <>
             <p className="muted">
               {papel === 'titular'
-                ? 'Apaga sua conta Executiva, as frotas, as contas de gerentes e pilotos e todo o histórico de voos. Os veículos ficam livres para serem vinculados de novo.'
+                ? 'Apaga sua conta Executiva, as frotas, as contas de gerentes e pilotos e todo o histórico de voos. Os veículos voltam para o contrato, e o código de ativação da conta pode ser usado de novo.'
                 : 'Apaga sua conta e todo o histórico de voos. O veículo fica livre para ser vinculado de novo.'}
             </p>
             <button className="btn ghost perigo" type="button" onClick={() => setExcluindo(true)}>Excluir minha conta</button>

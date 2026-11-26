@@ -174,6 +174,10 @@ export default function Voo() {
   const emVoo = voo.status === 'em_voo'
   const bateriaAtual = emVoo && ultima ? Number(ultima.bateria) : Number(veiculo?.bateria ?? 0)
   const critica = emVoo && bateriaAtual <= 20
+  const altitudeAtual = emVoo && ultima ? Number(ultima.altitude) : 0
+  const inclinacaoAtual = emVoo && ultima ? Math.abs(Number(ultima.inclinacao)) : 0
+  const acimaDoPlano = emVoo && online && altitudeAtual > voo.altitude_max
+  const inclinado = emVoo && online && inclinacaoAtual > 30
   const alturaTopo = Math.max(voo.altitude_max * 1.15, ...leituras.map((l) => Number(l.altitude)))
   const leituraTela = emVoo && ultima ? ultima : { altitude: 0, inclinacao: 0, bateria: bateriaAtual }
 
@@ -226,6 +230,16 @@ export default function Voo() {
         {critica && (
           <div className="alerta show forte" role="alert">
             <div><b>Bateria crítica.</b> Pouso imediato recomendado no ponto seguro mais próximo.</div>
+          </div>
+        )}
+        {acimaDoPlano && (
+          <div className="alerta show forte" role="alert">
+            <div><b>Acima da altitude do plano.</b> O veículo está a {numero(altitudeAtual)} m e o máximo do plano é {voo.altitude_max} m. Desça para a altitude planejada.</div>
+          </div>
+        )}
+        {inclinado && (
+          <div className="alerta show forte" role="alert">
+            <div><b>Inclinação insegura.</b> O veículo está inclinado {numero(inclinacaoAtual, 1)}° (limite de 30°). Estabilize o veículo.</div>
           </div>
         )}
         {emVoo && !online && (
