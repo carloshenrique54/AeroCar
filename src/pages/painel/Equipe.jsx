@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
 import { erroAmigavel } from '../../lib/format'
-import { Confirmar, FormPessoa } from '../../components/Gestao'
+import { ConfirmarExclusao, FormPessoa } from '../../components/Gestao'
 
 const PAPEL = { gerente: 'Gerente', piloto: 'Piloto' }
 
@@ -85,7 +85,7 @@ export default function Equipe() {
       <div className="cab-pag">
         <div>
           <h1 className="titulo-pag">Equipe{frotaAtual ? ` · ${frotaAtual.nome}` : ''}</h1>
-          <p className="muted">{conta?.empresa}{nomeTitular ? ` · titular ${nomeTitular}` : ''}</p>
+          <p className="muted">{[conta?.empresa, nomeTitular ? `titular ${nomeTitular}` : null].filter(Boolean).join(' · ')}</p>
         </div>
         <div className="cabine-acoes">
           {titular && <button className="btn ghost" type="button" onClick={() => abrir('gerente')}>Cadastrar gerente</button>}
@@ -159,12 +159,28 @@ export default function Equipe() {
 
 function LinhaPessoa({ m, frota, veiculo, frotas, editavel, removivel, executar }) {
   const [editando, setEditando] = useState(false)
+  const [excluindo, setExcluindo] = useState(false)
   const [papel, setPapel] = useState(m.papel)
   const [frotaId, setFrotaId] = useState(m.frota_id ?? '')
   const nome = m.perfis?.nome || 'Sem nome'
 
   return (
     <li className={editando ? 'editando' : ''}>
+      {excluindo && (
+        <ConfirmarExclusao
+          titulo={`Excluir a conta de ${nome}`}
+          rotuloCampo={`Para confirmar, digite o nome: ${nome}`}
+          esperado={nome}
+          onCancelar={() => setExcluindo(false)}
+          onConfirmar={async () => {
+            const ok = await executar('excluir_membro', { p_user: m.user_id }, `A conta de ${nome} foi excluída.`)
+            if (ok) setExcluindo(false)
+            return ok ? null : 'Não foi possível excluir. Veja o aviso no topo da página.'
+          }}
+        >
+          <p>O login de {nome.split(' ')[0]} é apagado e não pode ser recuperado. Os voos que {m.papel === 'piloto' ? 'ele fez' : 'ele registrou'} continuam no histórico da empresa, e os planos de voo pendentes são cancelados.</p>
+        </ConfirmarExclusao>
+      )}
       <div>
         <b>{nome}</b>
         <small>
@@ -208,12 +224,7 @@ function LinhaPessoa({ m, frota, veiculo, frotas, editavel, removivel, executar 
           <span className="pessoa-acoes">
             {editavel && <button className="link-btn" type="button" onClick={() => setEditando(true)}>Editar</button>}
             {removivel && (
-              <Confirmar
-                link
-                rotulo="Remover"
-                pergunta={`Remover ${nome.split(' ')[0]}? O acesso é bloqueado; o histórico de voos continua.`}
-                onConfirmar={() => executar('remover_membro', { p_user: m.user_id }, `${nome} removido da equipe.`)}
-              />
+              <button className="link-btn" type="button" onClick={() => setExcluindo(true)}>Excluir conta</button>
             )}
           </span>
         )

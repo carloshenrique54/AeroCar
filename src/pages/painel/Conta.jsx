@@ -3,6 +3,8 @@ import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
 import { erroAmigavel } from '../../lib/format'
 import { telefone, telefoneValido } from '../../lib/mascaras'
+import { useNavigate } from 'react-router-dom'
+import { ConfirmarExclusao } from '../../components/Gestao'
 
 export default function Conta() {
   const { user, perfil, conta, papel, recarregarPerfil } = useAuth()
@@ -11,6 +13,8 @@ export default function Conta() {
   const [msg, setMsg] = useState({ tipo: '', txt: '' })
   const [senha, setSenha] = useState('')
   const [msgSenha, setMsgSenha] = useState({ tipo: '', txt: '' })
+  const [excluindo, setExcluindo] = useState(false)
+  const navigate = useNavigate()
 
   useEffect(() => {
     if (perfil) setF({ nome: perfil.nome ?? '', telefone: telefone(perfil.telefone) })
@@ -41,6 +45,14 @@ export default function Conta() {
     if (error) return setMsgSenha({ tipo: 'erro', txt: erroAmigavel(error) })
     setSenha('')
     setMsgSenha({ tipo: 'ok', txt: 'Senha alterada.' })
+  }
+
+  const excluirConta = async () => {
+    const { error } = await supabase.rpc('excluir_minha_conta')
+    if (error) return erroAmigavel(error)
+    await supabase.auth.signOut().catch(() => {})
+    navigate('/', { replace: true })
+    return null
   }
 
   return (
@@ -74,6 +86,40 @@ export default function Conta() {
           {msgSenha.txt && <p className={`aviso ${msgSenha.tipo}`} role="status">{msgSenha.txt}</p>}
         </form>
       </div>
+
+      <section className="zona-perigo">
+        <h2 className="h-bloco">Excluir conta</h2>
+        {membro ? (
+          <p className="muted">
+            {papel === 'gerente'
+              ? 'A conta de gerente só pode ser excluída pelo titular da conta Executiva que cadastrou você.'
+              : 'A conta de piloto só pode ser excluída pelo titular da conta Executiva ou pelo gerente da sua frota.'}
+          </p>
+        ) : (
+          <>
+            <p className="muted">
+              {papel === 'titular'
+                ? 'Apaga sua conta Executiva, as frotas, as contas de gerentes e pilotos e todo o histórico de voos. Os veículos ficam livres para serem vinculados de novo.'
+                : 'Apaga sua conta e todo o histórico de voos. O veículo fica livre para ser vinculado de novo.'}
+            </p>
+            <button className="btn ghost perigo" type="button" onClick={() => setExcluindo(true)}>Excluir minha conta</button>
+          </>
+        )}
+      </section>
+
+      {excluindo && (
+        <ConfirmarExclusao
+          titulo="Excluir minha conta"
+          rotuloCampo="Para confirmar, digite o seu e-mail"
+          esperado={user.email}
+          botao="Excluir definitivamente"
+          onCancelar={() => setExcluindo(false)}
+          onConfirmar={excluirConta}
+        >
+          <p>Esta ação não pode ser desfeita. {papel === 'titular' ? 'Todas as contas da sua equipe também serão excluídas.' : ''}</p>
+          <p className="muted">Conta: <b>{user.email}</b></p>
+        </ConfirmarExclusao>
+      )}
     </>
   )
 }

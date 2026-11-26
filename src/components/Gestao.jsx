@@ -165,3 +165,48 @@ export function FormPessoa({ papel, titular, frotas, veiculos = [], frotaInicial
     </form>
   )
 }
+
+/**
+ * Tela de confirmação de exclusão: só libera o botão quando a pessoa
+ * digita exatamente o texto pedido (o e-mail da conta, por exemplo).
+ */
+export function ConfirmarExclusao({ titulo, children, rotuloCampo, esperado, botao = 'Excluir conta', onConfirmar, onCancelar }) {
+  const [digitado, setDigitado] = useState('')
+  const [erro, setErro] = useState('')
+  const [enviando, setEnviando] = useState(false)
+  const confere = digitado.trim().toLowerCase() === String(esperado ?? '').trim().toLowerCase()
+
+  const confirmar = async (e) => {
+    e.preventDefault()
+    if (!confere) return
+    setErro('')
+    setEnviando(true)
+    const msg = await onConfirmar()
+    setEnviando(false)
+    if (msg) setErro(msg)
+  }
+
+  return (
+    <div className="modal-fundo" role="presentation" onClick={(e) => e.target === e.currentTarget && !enviando && onCancelar()}>
+      <form className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-titulo" onSubmit={confirmar} noValidate>
+        <h2 id="modal-titulo" className="h-bloco">{titulo}</h2>
+        <div className="modal-texto">{children}</div>
+        <label htmlFor="confirmar-exclusao">{rotuloCampo}
+          <input
+            id="confirmar-exclusao"
+            value={digitado}
+            onChange={(e) => setDigitado(e.target.value)}
+            autoComplete="off"
+            autoFocus
+            placeholder={esperado}
+          />
+        </label>
+        {erro && <p className="aviso erro" role="alert">{erro}</p>}
+        <div className="cabine-acoes">
+          <button className="btn red" type="submit" disabled={!confere || enviando}>{enviando ? 'Excluindo…' : botao}</button>
+          <button className="btn ghost" type="button" onClick={onCancelar} disabled={enviando}>Cancelar</button>
+        </div>
+      </form>
+    </div>
+  )
+}

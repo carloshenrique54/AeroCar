@@ -66,7 +66,7 @@ export default function Frotas() {
       <div className="cab-pag">
         <div>
           <h1 className="titulo-pag">Frotas</h1>
-          <p className="muted">{conta?.empresa}. Clique numa frota para ver os veículos dela.</p>
+          <p className="muted">{conta?.empresa ? `${conta.empresa}. ` : ''}Clique numa frota para ver os veículos dela.</p>
         </div>
         {titular && (
           <button className="btn red" type="button" onClick={() => setCriando((c) => !c)}>Criar frota</button>

@@ -322,3 +322,17 @@ input[type='radio'] { width: 18px; min-height: 18px; accent-color: var(--red); m
   html { scroll-behavior: auto; }
   .barra i { transition: none; }
 }
+
+/* Exclusão de conta */
+.zona-perigo { margin-top: 32px; padding: 24px; border: 1px solid rgba(219, 11, 21, .45); border-radius: 14px; max-width: 640px; }
+.zona-perigo .h-bloco { margin-top: 0; }
+.zona-perigo p { margin: 0 0 16px; }
+.btn.ghost.perigo { border-color: var(--red); color: #ff8a8f; }
+.btn.ghost.perigo:hover { background: var(--red); color: #fff; }
+.modal-fundo { position: fixed; inset: 0; z-index: 100; background: rgba(10, 14, 24, .72); display: grid; place-items: center; padding: 20px; }
+.modal { width: min(480px, 100%); background: var(--panel, #1E2535); border: 1px solid var(--line); border-radius: 16px; padding: 28px; display: grid; gap: 14px; box-shadow: 0 24px 60px rgba(0, 0, 0, .45); }
+.modal .h-bloco { margin: 0; }
+.modal-texto p { margin: 0 0 8px; line-height: 1.5; }
+.modal label { display: grid; gap: 6px; font-size: 14px; font-weight: 600; }
+.modal .cabine-acoes { display: flex; gap: 10px; flex-wrap: wrap; }
+.modal .btn:disabled { opacity: .45; cursor: not-allowed; }
