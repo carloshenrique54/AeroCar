@@ -2,14 +2,15 @@ import { useState } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { erroAmigavel } from '../lib/format'
-import { telefone, telefoneValido } from '../lib/mascaras'
+import { codigoConta, telefone, telefoneValido } from '../lib/mascaras'
+import { supabase } from '../lib/supabase'
 
 export default function Cadastro() {
   const { user, cadastrar } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const destino = location.state?.de || '/painel'
-  const [f, setF] = useState({ nome: '', email: '', senha: '', telefone: '', tipo: 'pessoal' })
+  const [f, setF] = useState({ nome: '', email: '', senha: '', telefone: '', tipo: 'pessoal', codigo: '' })
   const [erro, setErro] = useState('')
   const [confirmar, setConfirmar] = useState(false)
   const [enviando, setEnviando] = useState(false)
@@ -18,7 +19,7 @@ export default function Cadastro() {
 
   const mudar = (e) => {
     const { name, value } = e.target
-    setF({ ...f, [name]: name === 'telefone' ? telefone(value) : value })
+    setF({ ...f, [name]: name === 'telefone' ? telefone(value) : name === 'codigo' ? codigoConta(value) : value })
   }
 
   const enviar = async (e) => {
@@ -28,14 +29,26 @@ export default function Cadastro() {
     if (!/^\S+@\S+\.\S+$/.test(f.email)) return setErro('Informe um e-mail válido.')
     if (f.telefone && !telefoneValido(f.telefone)) return setErro('Telefone incompleto. Use DDD + número.')
     if (f.senha.length < 6) return setErro('A senha precisa ter pelo menos 6 caracteres.')
+    const executivo = f.tipo === 'executivo'
+    if (executivo && f.codigo.replace(/[^A-Z0-9]/g, '').length < 10) {
+      return setErro('Informe o código de ativação da conta enviado pela AeroCar (EX-XXXX-XXXX).')
+    }
 
     setEnviando(true)
+    if (executivo) {
+      const { data: v, error: errV } = await supabase.rpc('verificar_codigo_conta', { p_codigo: f.codigo })
+      if (errV || !v?.valido) {
+        setEnviando(false)
+        return setErro(errV ? erroAmigavel(errV) : v.erro)
+      }
+    }
     const { data, error } = await cadastrar({
       email: f.email.trim(),
       senha: f.senha,
       nome: f.nome.trim(),
       telefone: f.telefone.trim(),
       tipo: f.tipo,
+      codigoConta: f.codigo,
     })
     setEnviando(false)
     if (error) return setErro(erroAmigavel(error))
@@ -64,7 +77,11 @@ export default function Cadastro() {
     <section className="band auth">
       <form className="cartao-form auth-form" onSubmit={enviar} noValidate>
         <h1 className="auth-titulo">Criar conta</h1>
-        <p className="muted">Depois do cadastro, vincule o seu AeroCar com a matrícula e o código de ativação entregues junto com o veículo.</p>
+        <p className="muted">
+          {f.tipo === 'executivo'
+            ? 'Use o código de ativação da conta enviado pela AeroCar. Os veículos do contrato entram na conta automaticamente.'
+            : 'Depois do cadastro, vincule o seu AeroCar com a matrícula e o código de ativação entregues junto com o veículo.'}
+        </p>
 
         <fieldset className="opcoes">
           <legend>Tipo de conta</legend>
@@ -77,6 +94,13 @@ export default function Cadastro() {
             <span><b>Plano Executivo</b><small>Vários veículos na mesma conta</small></span>
           </label>
         </fieldset>
+
+        {f.tipo === 'executivo' && (
+          <label htmlFor="codigo">Código de ativação da conta
+            <input id="codigo" name="codigo" value={f.codigo} onChange={mudar} placeholder="EX-XXXX-XXXX" autoCapitalize="characters" autoComplete="off" maxLength={12} />
+            <small className="muted">Ainda não tem? <Link to="/?assunto=plano_executivo#contato">Fale com a AeroCar</Link> para contratar o Plano Executivo.</small>
+          </label>
+        )}
 
         <label htmlFor="nome">Nome completo<input id="nome" name="nome" value={f.nome} onChange={mudar} autoComplete="name" required /></label>
         <label htmlFor="telefone">Telefone<input id="telefone" name="telefone" type="tel" inputMode="tel" value={f.telefone} onChange={mudar} autoComplete="tel" placeholder="(11) 91234-5678" maxLength={15} /></label>

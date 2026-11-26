@@ -1,11 +1,12 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import CityScene from '../components/CityScene'
 import Medidores from '../components/Medidores'
 import LineChart from '../components/LineChart'
 import { supabase } from '../lib/supabase'
 import { dinheiro, erroAmigavel, PRECO_UNITARIO } from '../lib/format'
 import { useAuth } from '../context/AuthContext'
+import { telefone as mascaraTelefone, telefoneValido } from '../lib/mascaras'
 
 const VOO_EXEMPLO = [0, 16, 33, 49, 66, 82, 98, 115, 131, 143, 142, 145, 147, 144, 141, 143, 146, 145, 142, 144]
 
@@ -22,7 +23,7 @@ export default function Home() {
               Carro voador pessoal com telemetria em tempo real. Altitude, estabilidade e bateria acompanhadas do plano de voo ao pouso.
             </p>
             <div className="ctas">
-              <a className="btn red" href="#proprietario">Agende uma demonstração</a>
+              <a className="btn red" href="#contato">Agende uma demonstração</a>
               <a className="btn ghost" href="#plataforma">Conheça a plataforma</a>
             </div>
           </div>
@@ -120,12 +121,12 @@ export default function Home() {
           <div>
             <p className="label">Área do proprietário</p>
             <h2 className="h2-sec">Já tem um AeroCar? Crie a sua conta.</h2>
-            <p className="lede">Vincule o veículo com a matrícula e o código de ativação entregues junto com ele e acompanhe cada voo pela plataforma.</p>
+            <p className="lede">Na conta pessoal, vincule o veículo com a matrícula e o código entregues junto com ele. No Plano Executivo, a AeroCar envia o código de ativação da conta, e os veículos do contrato já entram nela.</p>
             <ul className="inclui">
               <li><span>Telemetria em tempo real</span><span>Todas as contas</span></li>
               <li><span>Alertas de bateria, altitude e inclinação</span><span>Todas as contas</span></li>
               <li><span>Histórico de cada voo</span><span>Todas as contas</span></li>
-              <li><span>Vários veículos no mesmo painel</span><span>Plano Executivo</span></li>
+              <li><span>Frotas, gerentes e pilotos no mesmo painel</span><span>Plano Executivo</span></li>
             </ul>
             <div className="ctas">
               <Link className="btn red" to={user ? '/painel' : '/cadastro'}>{user ? 'Ir para o meu painel' : 'Criar minha conta'}</Link>
@@ -133,55 +134,100 @@ export default function Home() {
             </div>
             <p className="src">AeroCar a partir de {dinheiro(PRECO_UNITARIO)}, com a plataforma inclusa.</p>
           </div>
-          <FormDemonstracao />
+          <FormContato />
         </div>
       </section>
     </>
   )
 }
 
-function FormDemonstracao() {
-  const [form, setForm] = useState({ nome: '', email: '', uso: 'pessoal', cidade: '' })
+const ASSUNTOS = {
+  demonstracao: 'Agendar uma demonstração',
+  plano_executivo: 'Contratar o Plano Executivo',
+  suporte: 'Suporte para o meu AeroCar',
+  outro: 'Outro assunto',
+}
+
+function FormContato() {
+  const { user, perfil } = useAuth()
+  const [params] = useSearchParams()
+  const inicial = ASSUNTOS[params.get('assunto')] ? params.get('assunto') : 'demonstracao'
+  const vazio = { nome: '', email: '', telefone: '', empresa: '', assunto: inicial, mensagem: '' }
+  const [form, setForm] = useState(vazio)
   const [estado, setEstado] = useState({ tipo: null, msg: '' })
   const [enviando, setEnviando] = useState(false)
 
-  const mudar = (e) => setForm({ ...form, [e.target.name]: e.target.value })
+  // Quem já está logado não precisa digitar nome e e-mail de novo
+  useEffect(() => {
+    if (user) setForm((f) => ({ ...f, nome: f.nome || perfil?.nome || '', email: f.email || user.email }))
+  }, [user, perfil])
+
+  useEffect(() => {
+    setForm((f) => ({ ...f, assunto: inicial }))
+  }, [inicial])
+
+  const mudar = (e) => {
+    const { name, value } = e.target
+    setForm({ ...form, [name]: name === 'telefone' ? mascaraTelefone(value) : value })
+  }
 
   const enviar = async (e) => {
     e.preventDefault()
-    if (!form.nome.trim() || !/^\S+@\S+\.\S+$/.test(form.email)) {
-      setEstado({ tipo: 'erro', msg: 'Preencha seu nome e um e-mail válido.' })
-      return
-    }
+    setEstado({ tipo: null, msg: '' })
+    if (!form.nome.trim()) return setEstado({ tipo: 'erro', msg: 'Informe seu nome.' })
+    if (!/^\S+@\S+\.\S+$/.test(form.email.trim())) return setEstado({ tipo: 'erro', msg: 'Informe um e-mail válido.' })
+    if (form.telefone && !telefoneValido(form.telefone)) return setEstado({ tipo: 'erro', msg: 'Telefone incompleto. Use DDD + número.' })
+    if (form.assunto === 'plano_executivo' && !form.empresa.trim()) return setEstado({ tipo: 'erro', msg: 'Informe o nome da empresa.' })
+    if (!form.mensagem.trim()) return setEstado({ tipo: 'erro', msg: 'Escreva a sua mensagem.' })
+
     setEnviando(true)
-    const { error } = await supabase.from('demonstracoes').insert({
-      nome: form.nome.trim(),
-      email: form.email.trim().toLowerCase(),
-      uso: form.uso,
-      cidade: form.cidade.trim() || null,
+    const { error } = await supabase.rpc('enviar_mensagem', {
+      p_nome: form.nome.trim(),
+      p_email: form.email.trim(),
+      p_assunto: form.assunto,
+      p_mensagem: form.mensagem.trim(),
+      p_telefone: form.telefone.trim() || null,
+      p_empresa: form.empresa.trim() || null,
     })
     setEnviando(false)
-    if (error) {
-      setEstado({ tipo: 'erro', msg: erroAmigavel(error) })
-      return
-    }
-    setEstado({ tipo: 'ok', msg: `Obrigado, ${form.nome.trim().split(' ')[0]}. Nossa equipe vai entrar em contato por e-mail para agendar sua demonstração.` })
-    setForm({ nome: '', email: '', uso: 'pessoal', cidade: '' })
+    if (error) return setEstado({ tipo: 'erro', msg: erroAmigavel(error) })
+
+    const primeiro = form.nome.trim().split(' ')[0]
+    setEstado({
+      tipo: 'ok',
+      msg: form.assunto === 'plano_executivo'
+        ? `Obrigado, ${primeiro}. Nossa equipe comercial vai responder por e-mail com a proposta e, depois do contrato, com o código de ativação da conta.`
+        : `Obrigado, ${primeiro}. Recebemos sua mensagem e vamos responder por e-mail.`,
+    })
+    setForm({ ...vazio, nome: user ? form.nome : '', email: user ? form.email : '' })
   }
 
   return (
-    <form className="cartao-form" onSubmit={enviar} noValidate>
-      <h3>Ainda não tem o seu? Agende uma demonstração</h3>
-      <label htmlFor="demo-nome">Nome<input id="demo-nome" name="nome" value={form.nome} onChange={mudar} autoComplete="name" required /></label>
-      <label htmlFor="demo-email">E-mail<input id="demo-email" name="email" type="email" value={form.email} onChange={mudar} autoComplete="email" required /></label>
-      <label htmlFor="demo-cidade">Cidade<input id="demo-cidade" name="cidade" value={form.cidade} onChange={mudar} autoComplete="address-level2" /></label>
-      <label htmlFor="demo-uso">Uso pretendido
-        <select id="demo-uso" name="uso" value={form.uso} onChange={mudar}>
-          <option value="pessoal">Pessoal</option>
-          <option value="operadora">Operadora de táxi aéreo</option>
+    <form className="cartao-form" id="contato" onSubmit={enviar} noValidate>
+      <h3>Fale com a AeroCar</h3>
+      <label htmlFor="ct-assunto">Assunto
+        <select id="ct-assunto" name="assunto" value={form.assunto} onChange={mudar}>
+          {Object.entries(ASSUNTOS).map(([k, t]) => <option key={k} value={k}>{t}</option>)}
         </select>
       </label>
-      <button className="btn red" type="submit" disabled={enviando}>{enviando ? 'Enviando…' : 'Quero conhecer'}</button>
+      <label htmlFor="ct-nome">Nome<input id="ct-nome" name="nome" value={form.nome} onChange={mudar} autoComplete="name" required /></label>
+      <label htmlFor="ct-email">E-mail<input id="ct-email" name="email" type="email" value={form.email} onChange={mudar} autoComplete="email" required /></label>
+      <label htmlFor="ct-telefone">Telefone<input id="ct-telefone" name="telefone" type="tel" inputMode="tel" value={form.telefone} onChange={mudar} autoComplete="tel" placeholder="(11) 91234-5678" maxLength={15} /></label>
+      {form.assunto === 'plano_executivo' && (
+        <label htmlFor="ct-empresa">Empresa<input id="ct-empresa" name="empresa" value={form.empresa} onChange={mudar} autoComplete="organization" /></label>
+      )}
+      <label htmlFor="ct-mensagem">Mensagem
+        <textarea
+          id="ct-mensagem"
+          name="mensagem"
+          rows={4}
+          maxLength={2000}
+          value={form.mensagem}
+          onChange={mudar}
+          placeholder={form.assunto === 'plano_executivo' ? 'Quantos veículos a empresa precisa e para qual operação?' : 'Como podemos ajudar?'}
+        />
+      </label>
+      <button className="btn red" type="submit" disabled={enviando}>{enviando ? 'Enviando…' : 'Enviar mensagem'}</button>
       {estado.msg && <p className={`aviso ${estado.tipo}`} role="status">{estado.msg}</p>}
     </form>
   )

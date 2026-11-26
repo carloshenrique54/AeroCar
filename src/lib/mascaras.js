@@ -39,6 +39,15 @@ export function codigoAtivacao(v) {
   return String(v ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6)
 }
 
+/** Código de ativação da conta Executiva: EX-XXXX-XXXX */
+export function codigoConta(v) {
+  let s = String(v ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '')
+  if (s.startsWith('EX')) s = s.slice(2)
+  s = s.slice(0, 8)
+  if (!s) return ''
+  return `EX-${s.slice(0, 4)}${s.length > 4 ? `-${s.slice(4)}` : ''}`
+}
+
 /** Telefone completo: 10 ou 11 dígitos (fixo ou celular) */
 export const telefoneValido = (v) => [10, 11].includes(digitos(v).length)
 

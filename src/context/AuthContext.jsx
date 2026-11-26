@@ -40,12 +40,12 @@ export function AuthProvider({ children }) {
 
   const entrar = (email, senha) => supabase.auth.signInWithPassword({ email, password: senha })
 
-  const cadastrar = ({ email, senha, nome, telefone, tipo }) =>
+  const cadastrar = ({ email, senha, nome, telefone, tipo, codigoConta }) =>
     supabase.auth.signUp({
       email,
       password: senha,
       options: {
-        data: { nome, telefone, tipo },
+        data: tipo === 'executivo' ? { nome, telefone, tipo, codigo_conta: codigoConta } : { nome, telefone, tipo },
         emailRedirectTo: `${window.location.origin}/painel`,
       },
     })

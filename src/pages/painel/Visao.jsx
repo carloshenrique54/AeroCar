@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase'
 import { dataHora, erroAmigavel, numero, STATUS_VEICULO, STATUS_VOO } from '../../lib/format'
 import { comSinal, useAgora } from '../../lib/sinal'
 import VincularVeiculo from '../../components/VincularVeiculo'
+import AdicionarVeiculos from '../../components/AdicionarVeiculos'
 
 export default function Visao() {
   const { user, papel } = useAuth()
@@ -123,9 +124,13 @@ export default function Visao() {
   if (!veiculos.length) {
     return (
       <div className="vazio largo">
-        <h1 className="titulo-pag">{titular ? 'Vincule os veículos da empresa' : 'Vincule o seu AeroCar'}</h1>
-        <p className="muted">Para acompanhar a telemetria e registrar planos de voo, vincule o veículo à sua conta.</p>
-        <VincularVeiculo frotas={titular ? frotas : undefined} onVinculado={carregar} />
+        <h1 className="titulo-pag">{titular ? 'Adicione os veículos da empresa' : 'Vincule o seu AeroCar'}</h1>
+        <p className="muted">
+          {titular
+            ? 'Esta conta ainda não tem veículos. Use o código de ativação da conta enviado pela AeroCar.'
+            : 'Para acompanhar a telemetria e registrar planos de voo, vincule o veículo à sua conta.'}
+        </p>
+        {titular ? <AdicionarVeiculos frotas={frotas} onAdicionados={carregar} /> : <VincularVeiculo onVinculado={carregar} />}
       </div>
     )
   }
@@ -157,18 +162,19 @@ export default function Visao() {
         </div>
         <div className="cabine-acoes">
           {titular && (
-            <button className="btn ghost" type="button" onClick={() => setVinculando((v) => !v)}>Vincular veículo</button>
+            <button className="btn ghost" type="button" onClick={() => setVinculando((v) => !v)}>Adicionar veículos</button>
           )}
           <Link className="btn red" to="/painel/voos/novo">Novo plano de voo</Link>
         </div>
       </div>
 
-      {vinculando && (
-        <VincularVeiculo
-          frotas={titular ? frotas : undefined}
+      {vinculando && titular && (
+        <AdicionarVeiculos
+          frotas={frotas}
           frotaInicial={frotaAtual?.id ?? ''}
-          onVinculado={() => {
+          onAdicionados={(n) => {
             setVinculando(false)
+            setAviso(n === 1 ? '1 veículo adicionado à conta.' : `${n} veículos adicionados à conta.`)
             carregar()
           }}
           onCancelar={() => setVinculando(false)}

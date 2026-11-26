@@ -359,3 +359,9 @@ input[type='radio'] { width: 18px; min-height: 18px; accent-color: var(--red); m
 .tabela .sel { width: 28px; padding-right: 8px; }
 .tabela .sel input { width: 17px; height: 17px; accent-color: var(--red); cursor: pointer; }
 .tabela .sel input:disabled { cursor: not-allowed; opacity: .4; }
+
+/* Formulário de contato */
+textarea { font: 16px 'Open Sans', sans-serif; padding: 12px 14px; border-radius: 8px; border: 1px solid #4a5672; background: var(--deep); color: var(--cream); width: 100%; resize: vertical; min-height: 110px; }
+textarea:focus { outline: 2px solid var(--red); outline-offset: 1px; }
+label small.muted { font-weight: 400; font-size: 13px; }
+label small.muted a { color: var(--cream); }
