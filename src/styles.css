@@ -351,3 +351,11 @@ input[type='radio'] { width: 18px; min-height: 18px; accent-color: var(--red); m
 .selo.alerta-altitude_excedida { background: color-mix(in srgb, #e0a52b 30%, var(--deep)); }
 .selo.alerta-inclinacao { background: color-mix(in srgb, #5b8def 30%, var(--deep)); }
 .tabela td.fora { color: #ff6b72; font-weight: 700; }
+
+/* Seleção para apagar do histórico */
+.barra-selecao { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin: 4px 0 12px; }
+.barra-selecao .btn { padding: 8px 16px; font-size: 14px; }
+.barra-selecao .btn:disabled { opacity: .45; cursor: not-allowed; }
+.tabela .sel { width: 28px; padding-right: 8px; }
+.tabela .sel input { width: 17px; height: 17px; accent-color: var(--red); cursor: pointer; }
+.tabela .sel input:disabled { cursor: not-allowed; opacity: .4; }

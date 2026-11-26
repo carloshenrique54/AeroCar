@@ -1,29 +1,34 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import { dataHora, duracao, erroAmigavel, numero, STATUS_VOO } from '../../lib/format'
+import { Dialogo } from '../../components/Gestao'
 
 export default function Historico() {
   const { papel } = useAuth()
   const comPiloto = papel === 'titular' || papel === 'gerente'
+  // Só o dono dos veículos (conta pessoal ou titular da Executiva) apaga o histórico.
+  const podeApagar = papel === 'pessoal' || papel === 'titular'
+  const [selecionados, setSelecionados] = useState(() => new Set())
+  const [confirmando, setConfirmando] = useState(false)
+  const [aviso, setAviso] = useState('')
   const [voos, setVoos] = useState([])
   const [filtro, setFiltro] = useState('todos')
   const [busca, setBusca] = useState('')
   const [erro, setErro] = useState('')
   const [carregando, setCarregando] = useState(true)
 
-  useEffect(() => {
-    supabase
-      .from('voos_resumo')
-      .select('*')
-      .order('criado_em', { ascending: false })
-      .then(({ data, error }) => {
-        if (error) setErro(erroAmigavel(error))
-        setVoos(data ?? [])
-        setCarregando(false)
-      })
+  const carregar = useCallback(async () => {
+    const { data, error } = await supabase.from('voos_resumo').select('*').order('criado_em', { ascending: false })
+    if (error) setErro(erroAmigavel(error))
+    setVoos(data ?? [])
+    setCarregando(false)
   }, [])
+
+  useEffect(() => {
+    carregar()
+  }, [carregar])
 
   const veiculos = useMemo(() => {
     const m = new Map()
@@ -36,6 +41,32 @@ export default function Historico() {
     const q = busca.trim().toLowerCase()
     return !q || `${v.origem} ${v.destino} ${v.piloto ?? ''}`.toLowerCase().includes(q)
   })
+
+  const apagaveis = lista.filter((v) => v.status !== 'em_voo')
+  const marcados = apagaveis.filter((v) => selecionados.has(v.id))
+  const todosMarcados = apagaveis.length > 0 && marcados.length === apagaveis.length
+
+  const alternar = (id) =>
+    setSelecionados((atual) => {
+      const novo = new Set(atual)
+      if (novo.has(id)) novo.delete(id)
+      else novo.add(id)
+      return novo
+    })
+
+  const alternarTodos = () => setSelecionados(todosMarcados ? new Set() : new Set(apagaveis.map((v) => v.id)))
+
+  const apagar = async () => {
+    const ids = marcados.map((v) => v.id)
+    const { data, error } = await supabase.rpc('excluir_voos', { p_ids: ids })
+    if (error) return erroAmigavel(error)
+    setConfirmando(false)
+    setSelecionados(new Set())
+    setAviso(data === 1 ? '1 voo apagado do histórico.' : `${data} voos apagados do histórico.`)
+    window.dispatchEvent(new Event('aerocar:alertas'))
+    await carregar()
+    return null
+  }
 
   const concluidos = voos.filter((v) => v.status === 'concluido')
   const minutos = Math.round(
@@ -52,6 +83,18 @@ export default function Historico() {
       </div>
 
       {erro && <p className="aviso erro" role="alert">{erro}</p>}
+      {aviso && <p className="aviso ok" role="status">{aviso}</p>}
+      {confirmando && (
+        <Dialogo
+          titulo={marcados.length === 1 ? 'Apagar 1 voo do histórico?' : `Apagar ${marcados.length} voos do histórico?`}
+          confirmar="Apagar"
+          voltar="Cancelar"
+          onVoltar={() => setConfirmando(false)}
+          onConfirmar={apagar}
+        >
+          <p>As leituras dos sensores e os alertas desses voos também serão apagados. Essa ação não pode ser desfeita.</p>
+        </Dialogo>
+      )}
 
       <div className="numeros">
         <div><b>{concluidos.length}</b><span>voos concluídos</span></div>
@@ -71,11 +114,23 @@ export default function Historico() {
         )}
       </div>
 
+      {podeApagar && apagaveis.length > 0 && (
+        <div className="barra-selecao">
+          <span className="muted">{marcados.length ? `${marcados.length} selecionado${marcados.length > 1 ? 's' : ''}` : 'Selecione voos para apagar do histórico.'}</span>
+          <button className="btn ghost perigo" type="button" disabled={!marcados.length} onClick={() => setConfirmando(true)}>Apagar selecionados</button>
+        </div>
+      )}
+
       {lista.length ? (
         <div className="scroll">
           <table className="tabela">
             <thead>
               <tr>
+                {podeApagar && (
+                  <th className="sel">
+                    <input type="checkbox" aria-label="Selecionar todos os voos" checked={todosMarcados} onChange={alternarTodos} disabled={!apagaveis.length} />
+                  </th>
+                )}
                 <th>Trecho</th>
                 <th>Veículo</th>
                 {comPiloto && <th>Piloto</th>}
@@ -89,6 +144,18 @@ export default function Historico() {
             <tbody>
               {lista.map((v) => (
                 <tr key={v.id}>
+                  {podeApagar && (
+                    <td className="sel">
+                      <input
+                        type="checkbox"
+                        aria-label={`Selecionar ${v.origem} a ${v.destino}`}
+                        checked={selecionados.has(v.id)}
+                        onChange={() => alternar(v.id)}
+                        disabled={v.status === 'em_voo'}
+                        title={v.status === 'em_voo' ? 'Voo em andamento: registre o pouso antes de apagar.' : undefined}
+                      />
+                    </td>
+                  )}
                   <td><Link to={`/painel/voos/${v.id}`}>{v.origem} a {v.destino}</Link></td>
                   <td>{v.apelido || v.matricula}</td>
                   {comPiloto && <td>{v.piloto || '—'}</td>}

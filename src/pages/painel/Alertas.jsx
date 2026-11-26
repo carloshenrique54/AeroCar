@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import { dataHora, erroAmigavel, numero } from '../../lib/format'
+import { Dialogo } from '../../components/Gestao'
 
 const TIPOS = {
   bateria_critica: 'Bateria crítica',
@@ -18,7 +19,8 @@ const hora = (iso) => new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit
 const avisarMenu = () => window.dispatchEvent(new Event('aerocar:alertas'))
 
 export default function Alertas() {
-  const { user } = useAuth()
+  const { user, papel } = useAuth()
+  const podeApagar = papel === 'pessoal' || papel === 'titular'
   const [params, setParams] = useSearchParams()
   const aba = params.get('aba') === 'leituras' ? 'leituras' : 'alertas'
   const [voos, setVoos] = useState([])
@@ -76,7 +78,7 @@ export default function Alertas() {
       </div>
 
       {aba === 'alertas' ? (
-        <ListaAlertas alertas={alertas} setAlertas={setAlertas} vooPorId={vooPorId} setErro={setErro} />
+        <ListaAlertas alertas={alertas} setAlertas={setAlertas} vooPorId={vooPorId} setErro={setErro} podeApagar={podeApagar} />
       ) : (
         <Leituras voos={voos} vooInicial={params.get('voo')} setErro={setErro} />
       )}
@@ -88,7 +90,10 @@ function rotuloVeiculo(v) {
   return v ? v.apelido || v.matricula : '—'
 }
 
-function ListaAlertas({ alertas, setAlertas, vooPorId, setErro }) {
+function ListaAlertas({ alertas, setAlertas, vooPorId, setErro, podeApagar }) {
+  const [selecionados, setSelecionados] = useState(() => new Set())
+  const [confirmando, setConfirmando] = useState(false)
+  const [aviso, setAviso] = useState('')
   const [situacao, setSituacao] = useState('todos')
   const [tipo, setTipo] = useState('')
   const [veiculo, setVeiculo] = useState('')
@@ -109,6 +114,28 @@ function ListaAlertas({ alertas, setAlertas, vooPorId, setErro }) {
     return true
   })
   const pendentes = lista.filter((a) => !a.lido)
+  const marcados = lista.filter((a) => selecionados.has(a.id))
+  const todosMarcados = lista.length > 0 && marcados.length === lista.length
+
+  const alternar = (id) =>
+    setSelecionados((atual) => {
+      const novo = new Set(atual)
+      if (novo.has(id)) novo.delete(id)
+      else novo.add(id)
+      return novo
+    })
+
+  const apagar = async () => {
+    const ids = marcados.map((a) => a.id)
+    const { data, error } = await supabase.rpc('excluir_alertas', { p_ids: ids })
+    if (error) return erroAmigavel(error)
+    setAlertas((l) => l.filter((a) => !ids.includes(a.id)))
+    setSelecionados(new Set())
+    setConfirmando(false)
+    setAviso(data === 1 ? '1 alerta apagado.' : `${data} alertas apagados.`)
+    avisarMenu()
+    return null
+  }
 
   const marcarLidos = async (ids) => {
     if (!ids.length) return
@@ -143,8 +170,30 @@ function ListaAlertas({ alertas, setAlertas, vooPorId, setErro }) {
         )}
       </div>
 
-      {pendentes.length > 1 && (
-        <p><button className="link-btn" type="button" onClick={() => marcarLidos(pendentes.map((a) => a.id))}>Marcar {pendentes.length} como lidos</button></p>
+      {aviso && <p className="aviso ok" role="status">{aviso}</p>}
+      {confirmando && (
+        <Dialogo
+          titulo={marcados.length === 1 ? 'Apagar 1 alerta?' : `Apagar ${marcados.length} alertas?`}
+          confirmar="Apagar"
+          voltar="Cancelar"
+          onVoltar={() => setConfirmando(false)}
+          onConfirmar={apagar}
+        >
+          <p>Os alertas saem do histórico. Os voos e as leituras dos sensores continuam. Essa ação não pode ser desfeita.</p>
+        </Dialogo>
+      )}
+
+      {(pendentes.length > 1 || (podeApagar && lista.length > 0)) && (
+        <div className="barra-selecao">
+          {pendentes.length > 1 ? (
+            <button className="link-btn" type="button" onClick={() => marcarLidos(pendentes.map((a) => a.id))}>Marcar {pendentes.length} como lidos</button>
+          ) : <span />}
+          {podeApagar && lista.length > 0 && (
+            <button className="btn ghost perigo" type="button" disabled={!marcados.length} onClick={() => setConfirmando(true)}>
+              {marcados.length ? `Apagar ${marcados.length} selecionado${marcados.length > 1 ? 's' : ''}` : 'Apagar selecionados'}
+            </button>
+          )}
+        </div>
       )}
 
       {lista.length ? (
@@ -152,6 +201,11 @@ function ListaAlertas({ alertas, setAlertas, vooPorId, setErro }) {
           <table className="tabela">
             <thead>
               <tr>
+                {podeApagar && (
+                  <th className="sel">
+                    <input type="checkbox" aria-label="Selecionar todos os alertas" checked={todosMarcados} onChange={() => setSelecionados(todosMarcados ? new Set() : new Set(lista.map((a) => a.id)))} />
+                  </th>
+                )}
                 <th>Data</th>
                 <th>Alerta</th>
                 <th>Voo</th>
@@ -164,6 +218,11 @@ function ListaAlertas({ alertas, setAlertas, vooPorId, setErro }) {
                 const v = vooPorId.get(a.voo_id)
                 return (
                   <tr key={a.id} className={a.lido ? 'lido' : 'nao-lido'}>
+                    {podeApagar && (
+                      <td className="sel">
+                        <input type="checkbox" aria-label={`Selecionar alerta de ${dataHora(a.criado_em)}`} checked={selecionados.has(a.id)} onChange={() => alternar(a.id)} />
+                      </td>
+                    )}
                     <td className="nowrap">{dataHora(a.criado_em)}</td>
                     <td>
                       <span className={`selo alerta-${a.tipo}`}>{TIPOS[a.tipo] ?? a.tipo}</span>
