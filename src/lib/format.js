@@ -37,6 +37,7 @@ export const erroAmigavel = (error) => {
   if (/Email not confirmed/i.test(msg)) return 'Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.'
   if (/Password should be at least/i.test(msg)) return 'A senha precisa ter pelo menos 6 caracteres.'
   if (/A conta pessoal acompanha um veículo/i.test(msg)) return 'A conta pessoal acompanha um veículo, e ela já tem um vinculado.'
+  if (/rate limit/i.test(msg)) return 'Muitos e-mails enviados em pouco tempo. Aguarde alguns minutos e tente de novo.'
   if (/Failed to fetch|NetworkError/i.test(msg)) return 'Sem conexão com o servidor. Tente novamente.'
   return msg || 'Algo deu errado. Tente novamente.'
 }
