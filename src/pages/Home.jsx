@@ -98,6 +98,33 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="band" id="executivo">
+        <div className="wrap">
+          <p className="label">Plano Executivo</p>
+          <h2 className="h2-sec">Para empresas que operam vários AeroCars.</h2>
+          <p className="lede exec-lede">Todos os veículos da empresa em um só painel.</p>
+          <ul className="exec-lista">
+            <li><b>Frotas</b> por base ou região</li>
+            <li><b>Gerentes</b> cuidando da própria frota</li>
+            <li><b>Pilotos</b> veem só o veículo deles</li>
+            <li><b>Telemetria</b> de toda a frota ao vivo</li>
+            <li><b>Alertas</b> de bateria, altitude e inclinação</li>
+            <li><b>Histórico</b> de cada voo e piloto</li>
+            <li><b>Ativação</b> com um único código</li>
+            <li><b>Novas compras</b> na mesma conta</li>
+          </ul>
+          <ol className="exec-passos">
+            <li><b>1</b>Fale com a AeroCar pelo formulário</li>
+            <li><b>2</b>Feche o contrato e receba o código da conta</li>
+            <li><b>3</b>Crie a conta Executiva e cadastre a equipe</li>
+          </ol>
+          <div className="cabine-acoes">
+            <Link className="btn red" to="/?assunto=plano_executivo#contato">Quero o Plano Executivo</Link>
+            <Link className="btn ghost" to="/cadastro?tipo=executivo">Já tenho o código</Link>
+          </div>
+        </div>
+      </section>
+
       <section className="band light" id="missao">
         <div className="wrap">
           <p className="label">Nossa missão</p>

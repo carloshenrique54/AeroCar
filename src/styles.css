@@ -365,3 +365,19 @@ textarea { font: 16px 'Open Sans', sans-serif; padding: 12px 14px; border-radius
 textarea:focus { outline: 2px solid var(--red); outline-offset: 1px; }
 label small.muted { font-weight: 400; font-size: 13px; }
 label small.muted a { color: var(--cream); }
+
+/* Plano Executivo na página inicial */
+.exec-lede { max-width: 720px; }
+.exec-grade { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin: 32px 0; }
+.exec-grade article { border-top: 2px solid var(--red); padding: 16px 4px 0; }
+.exec-grade h3 { margin: 0 0 8px; font-size: 18px; }
+.exec-grade p { margin: 0; color: var(--muted); line-height: 1.55; }
+.exec-passos { list-style: none; padding: 0; margin: 0 0 28px; display: flex; gap: 24px; flex-wrap: wrap; }
+.exec-passos li { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+.exec-passos b { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--red); color: var(--cream); font-size: 14px; }
+@media (max-width: 860px) { .exec-grade { grid-template-columns: 1fr; } }
+.exec-lista { list-style: none; padding: 0; margin: 28px 0 32px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 40px; max-width: 820px; }
+.exec-lista li { display: flex; align-items: baseline; gap: 12px; font-size: 17px; color: var(--muted); }
+.exec-lista li::before { content: '✓'; flex: none; display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--red); color: #fff; font-size: 13px; font-weight: 800; transform: translateY(3px); }
+.exec-lista b { color: var(--cream); font-weight: 700; }
+@media (max-width: 700px) { .exec-lista { grid-template-columns: 1fr; } }

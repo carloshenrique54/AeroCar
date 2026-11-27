@@ -1,16 +1,17 @@
 import { useState } from 'react'
-import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { erroAmigavel } from '../lib/format'
 import { codigoConta, telefone, telefoneValido } from '../lib/mascaras'
 import { supabase } from '../lib/supabase'
 
 export default function Cadastro() {
+  const [params] = useSearchParams()
   const { user, cadastrar } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const destino = location.state?.de || '/painel'
-  const [f, setF] = useState({ nome: '', email: '', senha: '', telefone: '', tipo: 'pessoal', codigo: '' })
+  const [f, setF] = useState({ nome: '', email: '', senha: '', telefone: '', tipo: params.get('tipo') === 'executivo' ? 'executivo' : 'pessoal', codigo: '' })
   const [erro, setErro] = useState('')
   const [confirmar, setConfirmar] = useState(false)
   const [enviando, setEnviando] = useState(false)

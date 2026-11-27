@@ -31,6 +31,7 @@ export default function Header() {
               <a href="#problema" onClick={fechar}>O desafio</a>
               <a href="#solucao" onClick={fechar}>Solução</a>
               <a href="#plataforma" onClick={fechar}>Plataforma</a>
+              <a href="#executivo" onClick={fechar}>Executivo</a>
               <a href="#missao" onClick={fechar}>Missão</a>
             </>
           )}
